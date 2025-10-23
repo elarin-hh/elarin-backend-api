@@ -2,7 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseService } from '../../common/services/supabase.service';
 
 interface UserProfile {
-  id: string;
+  id: number;
+  uuid: string;
   full_name?: string;
   is_dev?: boolean;
 }
@@ -14,15 +15,15 @@ export class UserProfileService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   /**
-   * Busca dados customizados do usuário da tabela public.profiles
+   * Busca dados customizados do usuário da tabela public.users
    * Retorna null se não encontrar (usuário pode não ter perfil ainda)
    */
   async getUserProfile(userId: string): Promise<UserProfile | null> {
     try {
       const { data, error } = await this.supabaseService.client
-        .from('profiles')
-        .select('id, full_name, is_dev')
-        .eq('id', userId)
+        .from('users')
+        .select('id, uuid, full_name, is_dev')
+        .eq('uuid', userId)
         .single();
 
       if (error) {

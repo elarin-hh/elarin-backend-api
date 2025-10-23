@@ -1,10 +1,11 @@
-import { IsString, IsNumber, IsInt, Min, Max, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsNumber, IsInt, Min, Max, IsOptional, IsPositive } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CompleteSessionDto {
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000', description: 'Session UUID' })
-  @IsUUID()
-  session_id: string;
+  @ApiProperty({ example: 1, description: 'Session ID' })
+  @IsInt()
+  @IsPositive()
+  session_id: number;
 
   @ApiProperty({ example: 15, description: 'Repetitions completed' })
   @IsInt()

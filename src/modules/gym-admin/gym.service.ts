@@ -19,7 +19,7 @@ export class GymService {
     return data || [];
   }
 
-  async toggleUserStatus(gymId: number, userId: string) {
+  async toggleUserStatus(gymId: number, userId: number) {
     const { data: link } = await this.supabaseService.client
       .from('gym_user_links')
       .select('*')
@@ -55,7 +55,7 @@ export class GymService {
     return user;
   }
 
-  async removeUser(gymId: number, userId: string) {
+  async removeUser(gymId: number, userId: number) {
     const { error } = await this.supabaseService.client
       .from('gym_user_links')
       .delete()

@@ -44,12 +44,12 @@ export class GymController {
   @Patch('users/:userId/toggle')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Toggle user status (active/inactive)' })
-  @ApiParam({ name: 'userId', description: 'User UUID' })
+  @ApiParam({ name: 'userId', description: 'User ID', type: Number })
   @ApiResponse({ status: 200, description: 'User status updated' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async toggleUserStatus(
     @CurrentGym('id') gymId: number,
-    @Param('userId') userId: string,
+    @Param('userId') userId: number,
   ) {
     return this.gymService.toggleUserStatus(gymId, userId);
   }
@@ -57,12 +57,12 @@ export class GymController {
   @Delete('users/:userId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Remove user from gym' })
-  @ApiParam({ name: 'userId', description: 'User UUID' })
+  @ApiParam({ name: 'userId', description: 'User ID', type: Number })
   @ApiResponse({ status: 200, description: 'User removed successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async removeUser(
     @CurrentGym('id') gymId: number,
-    @Param('userId') userId: string,
+    @Param('userId') userId: number,
   ) {
     return this.gymService.removeUser(gymId, userId);
   }

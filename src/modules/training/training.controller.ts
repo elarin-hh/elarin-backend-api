@@ -51,12 +51,12 @@ export class TrainingController {
 
   @Get('sessions/:id')
   @ApiOperation({ summary: 'Get session details' })
-  @ApiParam({ name: 'id', description: 'Session UUID' })
+  @ApiParam({ name: 'id', description: 'Session ID', type: Number })
   @ApiResponse({ status: 200, description: 'Session details retrieved' })
   @ApiResponse({ status: 404, description: 'Session not found' })
   async getSessionDetails(
     @CurrentUser('id') userId: string,
-    @Param('id') sessionId: string,
+    @Param('id') sessionId: number,
   ) {
     return this.trainingService.getSessionDetails(userId, sessionId);
   }

@@ -6,7 +6,26 @@ import { CreateSessionDto, CompleteSessionDto } from './dto';
 export class TrainingService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
+  /**
+   * Converte UUID do Supabase Auth para ID integer da tabela users
+   */
+  private async getUserIdFromUuid(userUuid: string): Promise<number> {
+    const { data, error } = await this.supabaseService.client
+      .from('users')
+      .select('id')
+      .eq('uuid', userUuid)
+      .single();
+
+    if (error || !data) {
+      throw new NotFoundException('User not found');
+    }
+
+    return data.id;
+  }
+
   async createSession(userId: string, createSessionDto: CreateSessionDto) {
+    // Converter UUID para ID integer
+    const userIdInt = await this.getUserIdFromUuid(userId);
     // Verificar se exercício existe
     const { data: exercise, error: exerciseError } = await this.supabaseService.client
       .from('exercises')
@@ -22,7 +41,7 @@ export class TrainingService {
     const { data: session, error } = await this.supabaseService.client
       .from('training_sessions')
       .insert({
-        user_id: userId,
+        user_id: userIdInt,
         exercise_type: createSessionDto.exercise_type,
         status: 'in_progress',
       })
@@ -39,12 +58,15 @@ export class TrainingService {
   async completeSession(userId: string, completeSessionDto: CompleteSessionDto) {
     const { session_id, ...sessionData } = completeSessionDto;
 
+    // Converter UUID para ID integer
+    const userIdInt = await this.getUserIdFromUuid(userId);
+
     // Verificar ownership
     const { data: session, error: sessionError } = await this.supabaseService.client
       .from('training_sessions')
       .select('*')
       .eq('id', session_id)
-      .eq('user_id', userId)
+      .eq('user_id', userIdInt)
       .single();
 
     if (sessionError || !session) {
@@ -69,13 +91,16 @@ export class TrainingService {
   }
 
   async getHistory(userId: string, limit = 20, offset = 0) {
+    // Converter UUID para ID integer
+    const userIdInt = await this.getUserIdFromUuid(userId);
+
     const { data, error } = await this.supabaseService.client
       .from('training_sessions')
       .select(`
         *,
         exercises:exercise_type (name_pt, name_en, category)
       `)
-      .eq('user_id', userId)
+      .eq('user_id', userIdInt)
       .eq('status', 'completed')
       .order('finished_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -87,7 +112,10 @@ export class TrainingService {
     return data;
   }
 
-  async getSessionDetails(userId: string, sessionId: string) {
+  async getSessionDetails(userId: string, sessionId: number) {
+    // Converter UUID para ID integer
+    const userIdInt = await this.getUserIdFromUuid(userId);
+
     const { data, error } = await this.supabaseService.client
       .from('training_sessions')
       .select(`
@@ -95,7 +123,7 @@ export class TrainingService {
         exercises:exercise_type (*)
       `)
       .eq('id', sessionId)
-      .eq('user_id', userId)
+      .eq('user_id', userIdInt)
       .single();
 
     if (error || !data) {
