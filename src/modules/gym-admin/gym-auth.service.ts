@@ -21,7 +21,6 @@ export class GymAuthService {
   async register(registerGymDto: RegisterGymDto) {
     const { email, password, ...gymData } = registerGymDto;
 
-    // Verificar se já existe
     const { data: existing } = await this.supabaseService.client
       .from('gyms_company')
       .select('id')
@@ -32,10 +31,8 @@ export class GymAuthService {
       throw new ConflictException('Email already registered');
     }
 
-    // Hash da senha
     const password_hash = await bcrypt.hash(password, 10);
 
-    // Inserir academia
     const { data: gym, error } = await this.supabaseService.client
       .from('gyms_company')
       .insert({
@@ -50,7 +47,6 @@ export class GymAuthService {
       throw new BadRequestException(error.message);
     }
 
-    // Gerar JWT
     const access_token = this.generateToken(gym.id, gym.email);
 
     return {
@@ -62,7 +58,6 @@ export class GymAuthService {
   async login(loginGymDto: LoginGymDto) {
     const { email, password } = loginGymDto;
 
-    // Buscar academia
     const { data: gym, error } = await this.supabaseService.client
       .from('gyms_company')
       .select('*')
@@ -74,14 +69,12 @@ export class GymAuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Verificar senha
     const isValid = await bcrypt.compare(password, gym.password_hash);
 
     if (!isValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Gerar JWT
     const access_token = this.generateToken(gym.id, gym.email);
 
     return {
@@ -101,7 +94,6 @@ export class GymAuthService {
         secret: this.configService.get('JWT_SECRET') || 'elarin-gym-secret',
       });
 
-      // Buscar academia
       const { data: gym } = await this.supabaseService.client
         .from('gyms_company')
         .select('*')

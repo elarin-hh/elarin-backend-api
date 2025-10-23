@@ -13,11 +13,13 @@ import { GymService } from './gym.service';
 import { GymAuthService } from './gym-auth.service';
 import { GymAuthGuard } from './guards/gym-auth.guard';
 import { CurrentGym } from './decorators/current-gym.decorator';
+import { GymRoute } from '../../common/decorators/gym-route.decorator';
 
 @ApiTags('Gym Management')
 @Controller('gyms')
 @UseGuards(GymAuthGuard)
 @ApiBearerAuth()
+@GymRoute()
 export class GymController {
   constructor(
     private readonly gymService: GymService,

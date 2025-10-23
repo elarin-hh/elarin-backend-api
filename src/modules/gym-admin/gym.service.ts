@@ -6,7 +6,6 @@ export class GymService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   async getUsers(gymId: number) {
-    // Usar a view criada no banco
     const { data, error } = await this.supabaseService.client
       .from('gym_users_view')
       .select('*')
@@ -21,7 +20,6 @@ export class GymService {
   }
 
   async toggleUserStatus(gymId: number, userId: string) {
-    // Buscar o vínculo atual
     const { data: link } = await this.supabaseService.client
       .from('gym_user_links')
       .select('*')
@@ -33,7 +31,6 @@ export class GymService {
       throw new NotFoundException('User link not found');
     }
 
-    // Toggle status
     const newStatus = link.status === 'active' ? 'inactive' : 'active';
 
     const { data, error } = await this.supabaseService.client
@@ -48,7 +45,6 @@ export class GymService {
       throw new NotFoundException('Failed to update user status');
     }
 
-    // Buscar dados completos do usuário
     const { data: user } = await this.supabaseService.client
       .from('gym_users_view')
       .select('*')

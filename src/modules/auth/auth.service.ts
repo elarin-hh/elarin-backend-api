@@ -51,7 +51,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Buscar dados customizados do perfil do usuário
     const userProfile = await this.userProfileService.getUserProfile(authData.user.id);
 
     return {
@@ -81,7 +80,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid token');
     }
 
-    // Buscar dados customizados do perfil do usuário
     const userProfile = await this.userProfileService.getUserProfile(user.id);
 
     return {

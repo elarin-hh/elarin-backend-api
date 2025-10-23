@@ -2,6 +2,7 @@ import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from
 import { Reflector } from '@nestjs/core';
 import { AuthService } from '../../modules/auth/auth.service';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { IS_GYM_ROUTE_KEY } from '../decorators/gym-route.decorator';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -11,13 +12,22 @@ export class JwtAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // Check if route is public
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
     if (isPublic) {
+      return true;
+    }
+
+    // Check if route is for gym (uses GymAuthGuard instead)
+    const isGymRoute = this.reflector.getAllAndOverride<boolean>(IS_GYM_ROUTE_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isGymRoute) {
       return true;
     }
 

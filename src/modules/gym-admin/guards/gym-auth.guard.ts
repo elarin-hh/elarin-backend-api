@@ -15,7 +15,6 @@ export class GymAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // Verificar se a rota é pública
     const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
       context.getHandler(),
       context.getClass(),
@@ -32,11 +31,11 @@ export class GymAuthGuard implements CanActivate {
       throw new UnauthorizedException('No token provided');
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer '
+    const token = authHeader.substring(7);
 
     try {
       const gym = await this.gymAuthService.verifyToken(token);
-      request.gym = gym; // Anexa a academia ao request
+      request.gym = gym;
       return true;
     } catch (error) {
       throw new UnauthorizedException('Invalid token');
