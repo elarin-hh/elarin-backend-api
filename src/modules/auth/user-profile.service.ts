@@ -41,4 +41,57 @@ export class UserProfileService {
       return null; // Retorna null em caso de erro para não quebrar o login
     }
   }
+
+  /**
+   * Cria perfil do usuário na tabela public.users
+   */
+  async createUserProfile(
+    userId: string,
+    email: string,
+    fullName?: string,
+  ): Promise<UserProfile | null> {
+    try {
+      const { data, error } = await this.supabaseService.client
+        .from('users')
+        .insert({
+          uuid: userId,
+          email: email,
+          full_name: fullName || null,
+          locale: 'pt-BR',
+          is_dev: false,
+        })
+        .select('id, uuid, full_name, is_dev')
+        .single();
+
+      if (error) {
+        this.logger.error(`Error creating user profile for ${userId}:`, error);
+        return null;
+      }
+
+      this.logger.log(`User profile created successfully for ${userId}`);
+      return data;
+    } catch (error) {
+      this.logger.error(`Error creating user profile for ${userId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Busca ou cria perfil do usuário
+   */
+  async getOrCreateUserProfile(
+    userId: string,
+    email: string,
+    fullName?: string,
+  ): Promise<UserProfile | null> {
+    // Primeiro tenta buscar
+    let profile = await this.getUserProfile(userId);
+
+    // Se não encontrar, cria
+    if (!profile) {
+      profile = await this.createUserProfile(userId, email, fullName);
+    }
+
+    return profile;
+  }
 }

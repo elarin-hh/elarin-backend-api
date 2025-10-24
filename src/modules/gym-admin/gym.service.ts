@@ -33,7 +33,7 @@ export class GymService {
 
     const newStatus = link.status === 'active' ? 'inactive' : 'active';
 
-    const { data, error } = await this.supabaseService.client
+    const { error } = await this.supabaseService.client
       .from('gym_user_links')
       .update({ status: newStatus })
       .eq('gym_id', gymId)
@@ -91,6 +91,60 @@ export class GymService {
       total_users,
       active_users,
       inactive_users,
+    };
+  }
+
+  async getAllActiveGyms() {
+    const { data, error } = await this.supabaseService.client
+      .from('gyms_company')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new NotFoundException('Failed to fetch active gyms');
+    }
+
+    return (data || []).map(gym => {
+      const { password_hash, ...sanitized } = gym;
+      return sanitized;
+    });
+  }
+
+  async linkUserToGym(userId: number, gymId: number) {
+    // Check if user already linked to this gym
+    const { data: existingLink } = await this.supabaseService.client
+      .from('gym_user_links')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('gym_id', gymId)
+      .single();
+
+    if (existingLink) {
+      return {
+        message: 'User already linked to this gym',
+        link: existingLink,
+      };
+    }
+
+    // Create new link
+    const { data, error } = await this.supabaseService.client
+      .from('gym_user_links')
+      .insert({
+        user_id: userId,
+        gym_id: gymId,
+        status: 'active',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new NotFoundException('Failed to link user to gym');
+    }
+
+    return {
+      message: 'User linked to gym successfully',
+      link: data,
     };
   }
 }

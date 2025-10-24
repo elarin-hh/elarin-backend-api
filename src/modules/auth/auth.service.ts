@@ -25,15 +25,27 @@ export class AuthService {
       throw new BadRequestException(error.message);
     }
 
-    const userProfile = authData.user
-      ? await this.userProfileService.getUserProfile(authData.user.id)
-      : null;
+    if (!authData.user) {
+      throw new BadRequestException('Auth user not created');
+    }
+
+    // Cria ou busca o perfil do usuário na tabela public.users
+    const userProfile = await this.userProfileService.getOrCreateUserProfile(
+      authData.user.id,
+      email,
+      full_name,
+    );
+
+    if (!userProfile) {
+      throw new BadRequestException('Failed to create user profile');
+    }
 
     return {
       user: {
         ...authData.user,
-        full_name: userProfile?.full_name || full_name,
-        is_dev: userProfile?.is_dev || false,
+        id: userProfile.id.toString(),
+        full_name: userProfile.full_name || full_name,
+        is_dev: userProfile.is_dev || false,
       },
       session: authData.session,
     };
@@ -56,6 +68,7 @@ export class AuthService {
     return {
       user: {
         ...authData.user,
+        id: userProfile?.id?.toString() || authData.user?.id,
         full_name: userProfile?.full_name || authData.user.user_metadata?.full_name,
         is_dev: userProfile?.is_dev || false,
       },

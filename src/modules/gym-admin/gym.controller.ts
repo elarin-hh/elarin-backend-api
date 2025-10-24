@@ -1,8 +1,10 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Delete,
+  Body,
   Param,
   UseGuards,
   HttpCode,
@@ -14,6 +16,8 @@ import { GymAuthService } from './gym-auth.service';
 import { GymAuthGuard } from './guards/gym-auth.guard';
 import { CurrentGym } from './decorators/current-gym.decorator';
 import { GymRoute } from '../../common/decorators/gym-route.decorator';
+import { Public } from '../../common/decorators/public.decorator';
+import { LinkUserDto } from './dto';
 
 @ApiTags('Gym Management')
 @Controller('gyms')
@@ -25,6 +29,24 @@ export class GymController {
     private readonly gymService: GymService,
     private readonly gymAuthService: GymAuthService,
   ) {}
+
+  @Get('active')
+  @Public()
+  @ApiOperation({ summary: 'Get all active gyms' })
+  @ApiResponse({ status: 200, description: 'List of active gyms retrieved' })
+  async getAllActiveGyms() {
+    return this.gymService.getAllActiveGyms();
+  }
+
+  @Post('link-user')
+  @Public()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Link a user to a gym' })
+  @ApiResponse({ status: 201, description: 'User linked to gym successfully' })
+  @ApiResponse({ status: 404, description: 'User or gym not found' })
+  async linkUserToGym(@Body() linkUserDto: LinkUserDto) {
+    return this.gymService.linkUserToGym(linkUserDto.user_id, linkUserDto.gym_id);
+  }
 
   @Get('profile')
   @ApiOperation({ summary: 'Get current gym profile' })
