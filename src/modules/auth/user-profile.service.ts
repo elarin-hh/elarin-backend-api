@@ -3,8 +3,14 @@ import { SupabaseService } from '../../common/services/supabase.service';
 
 interface UserProfile {
   id: number;
-  uuid: string;
+  auth_uid?: string;
+  email?: string;
   full_name?: string;
+  avatar_url?: string;
+  height_cm?: number;
+  weight_kg?: number;
+  birth_date?: string;
+  locale?: string;
   is_dev?: boolean;
 }
 
@@ -15,15 +21,16 @@ export class UserProfileService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   /**
-   * Busca dados customizados do usuário da tabela public.users
-   * Retorna null se não encontrar (usuário pode não ter perfil ainda)
+   * Busca dados do usuário da tabela public.users
+   * Suporta tanto B2C (usuário standalone) quanto B2B (usuário vinculado a organização)
+   * Retorna null se não encontrar
    */
   async getUserProfile(userId: string): Promise<UserProfile | null> {
     try {
-      const { data, error } = await this.supabaseService.client
+      const { data, error} = await this.supabaseService.client
         .from('users')
-        .select('id, uuid, full_name, is_dev')
-        .eq('uuid', userId)
+        .select('id, auth_uid, email, full_name, avatar_url, height_cm, weight_kg, birth_date, locale, is_dev')
+        .eq('auth_uid', userId)
         .single();
 
       if (error) {
@@ -54,13 +61,13 @@ export class UserProfileService {
       const { data, error } = await this.supabaseService.client
         .from('users')
         .insert({
-          uuid: userId,
+          auth_uid: userId,
           email: email,
           full_name: fullName || null,
           locale: 'pt-BR',
           is_dev: false,
         })
-        .select('id, uuid, full_name, is_dev')
+        .select('id, auth_uid, email, full_name, avatar_url, height_cm, weight_kg, birth_date, locale, is_dev')
         .single();
 
       if (error) {

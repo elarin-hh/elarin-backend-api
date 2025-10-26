@@ -1,7 +1,7 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto } from './dto';
+import { RegisterDto, LoginDto, RegisterWithOrganizationDto } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Public } from '../../common/decorators/public.decorator';
 
@@ -18,6 +18,16 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
+  }
+
+  @Public()
+  @Post('register-with-organization')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Register new user with organization' })
+  @ApiResponse({ status: 201, description: 'User registered and linked to organization successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  async registerWithOrganization(@Body() registerDto: RegisterWithOrganizationDto) {
+    return this.authService.registerWithOrganization(registerDto);
   }
 
   @Public()

@@ -5,12 +5,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { GymAuthService } from '../gym-auth.service';
+import { OrganizationAuthService } from '../organization-auth.service';
 
 @Injectable()
-export class GymAuthGuard implements CanActivate {
+export class OrganizationAuthGuard implements CanActivate {
   constructor(
-    private readonly gymAuthService: GymAuthService,
+    private readonly organizationAuthService: OrganizationAuthService,
     private readonly reflector: Reflector,
   ) {}
 
@@ -34,8 +34,8 @@ export class GymAuthGuard implements CanActivate {
     const token = authHeader.substring(7);
 
     try {
-      const gym = await this.gymAuthService.verifyToken(token);
-      request.gym = gym;
+      const organization = await this.organizationAuthService.verifyToken(token);
+      request.organization = organization;
       return true;
     } catch (error) {
       throw new UnauthorizedException('Invalid token');

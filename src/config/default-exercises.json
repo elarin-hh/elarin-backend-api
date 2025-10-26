@@ -1,0 +1,24 @@
+{
+  "exercises": [
+    {
+      "type": "squat",
+      "name": "Agachamento",
+      "is_active": true
+    },
+    {
+      "type": "pushup",
+      "name": "Flexão",
+      "is_active": false
+    },
+    {
+      "type": "pullup",
+      "name": "Barra Fixa",
+      "is_active": false
+    },
+    {
+      "type": "plank",
+      "name": "Prancha",
+      "is_active": false
+    }
+  ]
+}

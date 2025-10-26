@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from
 import { Reflector } from '@nestjs/core';
 import { AuthService } from '../../modules/auth/auth.service';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import { IS_GYM_ROUTE_KEY } from '../decorators/gym-route.decorator';
+import { IS_ORGANIZATION_ROUTE_KEY } from '../decorators/organization-route.decorator';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -21,13 +21,13 @@ export class JwtAuthGuard implements CanActivate {
       return true;
     }
 
-    // Check if route is for gym (uses GymAuthGuard instead)
-    const isGymRoute = this.reflector.getAllAndOverride<boolean>(IS_GYM_ROUTE_KEY, [
+    // Check if route is for organization (uses OrganizationAuthGuard instead)
+    const isOrganizationRoute = this.reflector.getAllAndOverride<boolean>(IS_ORGANIZATION_ROUTE_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
-    if (isGymRoute) {
+    if (isOrganizationRoute) {
       return true;
     }
 

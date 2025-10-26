@@ -1,10 +1,10 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
-export const CurrentGym = createParamDecorator(
+export const CurrentOrganization = createParamDecorator(
   (data: string | undefined, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    const gym = request.gym;
+    const organization = request.organization;
 
-    return data ? gym?.[data] : gym;
+    return data ? organization?.[data] : organization;
   },
 );

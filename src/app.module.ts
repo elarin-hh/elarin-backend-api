@@ -9,7 +9,7 @@ import { SupabaseModule } from './common/services/supabase.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ExercisesModule } from './modules/exercises/exercises.module';
 import { TrainingModule } from './modules/training/training.module';
-import { GymAdminModule } from './modules/gym-admin/gym-admin.module';
+import { OrganizationsModule } from './modules/organizations/organizations.module';
 
 // Guards and Filters
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -37,7 +37,7 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
     AuthModule,
     ExercisesModule,
     TrainingModule,
-    GymAdminModule,
+    OrganizationsModule,
   ],
   providers: [
     // Global guards
