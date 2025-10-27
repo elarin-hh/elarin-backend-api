@@ -26,7 +26,8 @@ export class ExercisesService {
    */
   private loadDefaultExercises() {
     try {
-      const configPath = path.join(__dirname, '../../config/default-exercises.json');
+      // Use process.cwd() to get project root - works in both dev and prod
+      const configPath = path.join(process.cwd(), 'src/config/default-exercises.json');
       const fileContent = fs.readFileSync(configPath, 'utf-8');
       const config: DefaultExercisesConfig = JSON.parse(fileContent);
       this.defaultExercises = config.exercises;
