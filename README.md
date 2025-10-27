@@ -150,7 +150,7 @@ A API utiliza **JWT (JSON Web Tokens)** para autenticação.
 
 ### Endpoints Protegidos (Requerem token)
 
-- `POST /auth/logout` - Fazer logout
+- `DELETE /auth/account` - Excluir conta permanentemente
 - `GET /exercises` - Listar exercícios
 - `GET /exercises/:type` - Buscar exercício por tipo
 - `POST /training/sessions` - Criar sessão de treino
@@ -172,14 +172,9 @@ Acesse: `http://localhost:3001/docs`
 4. Cole o token e clique em **Authorize**
 5. Teste todos os endpoints protegidos!
 
-### Opção 2: Postman
+### Opção 2: Postman ou Insomnia
 
-Importe os arquivos fornecidos:
-
-1. **Coleção**: `Elarin_NestJS_API.postman_collection.json`
-2. **Environment**: `Elarin_NestJS.postman_environment.json`
-
-Veja instruções detalhadas em: [POSTMAN_SETUP_NESTJS.md](./POSTMAN_SETUP_NESTJS.md)
+Use o Swagger docs para testar ou configure sua própria coleção
 
 ### Opção 3: cURL
 
@@ -250,6 +245,8 @@ export class ExercisesController {
 ### ✅ Implementado
 
 - Autenticação JWT com Supabase
+- Registro e login de usuários
+- Exclusão permanente de conta (com todos os dados vinculados)
 - CRUD de exercícios
 - Sessões de treino
 - Histórico de treinos
@@ -323,12 +320,6 @@ Verifique se as credenciais no `.env` estão corretas:
 Execute o endpoint de login novamente para obter um novo token.
 
 ---
-
-## 📖 Documentação Adicional
-
-- [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) - Guia de migração Fastify → NestJS
-- [ESTRUTURA_NOVA.md](./ESTRUTURA_NOVA.md) - Detalhes da estrutura do projeto
-- [POSTMAN_SETUP_NESTJS.md](./POSTMAN_SETUP_NESTJS.md) - Setup do Postman
 
 ---
 

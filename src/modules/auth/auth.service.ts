@@ -198,16 +198,6 @@ export class AuthService {
     };
   }
 
-  async logout(token: string) {
-    const { error } = await this.supabaseService.client.auth.admin.signOut(token);
-
-    if (error) {
-      throw new BadRequestException('Logout failed');
-    }
-
-    return { message: 'Logout successful' };
-  }
-
   async verifyToken(token: string) {
     const { data: { user }, error } = await this.supabaseService.client.auth.getUser(token);
 
@@ -222,5 +212,54 @@ export class AuthService {
       full_name: userProfile?.full_name || user.user_metadata?.full_name,
       is_dev: userProfile?.is_dev || false,
     };
+  }
+
+  async deleteAccount(authUserId: string) {
+    try {
+      // Get user profile to get the numeric ID
+      const userProfile = await this.userProfileService.getUserProfile(authUserId);
+
+      if (!userProfile) {
+        throw new BadRequestException('User profile not found');
+      }
+
+      const userProfileId = userProfile.id;
+
+      // Step 1: Delete all user-related data
+      // Delete training sessions
+      await this.supabaseService.client
+        .from('training_sessions')
+        .delete()
+        .eq('user_id', userProfileId);
+
+      // Delete exercises
+      await this.supabaseService.client
+        .from('exercises')
+        .delete()
+        .eq('user_id', userProfileId);
+
+      // Delete memberships
+      await this.supabaseService.client
+        .from('memberships')
+        .delete()
+        .eq('user_id', userProfileId);
+
+      // Step 2: Delete user profile
+      await this.supabaseService.client
+        .from('users')
+        .delete()
+        .eq('id', userProfileId);
+
+      // Step 3: Delete auth user
+      const { error: authDeleteError } = await this.supabaseService.client.auth.admin.deleteUser(authUserId);
+
+      if (authDeleteError) {
+        throw new BadRequestException(`Failed to delete auth user: ${authDeleteError.message}`);
+      }
+
+      return { message: 'Account deleted successfully' };
+    } catch (error) {
+      throw new BadRequestException(error.message || 'Failed to delete account');
+    }
   }
 }
