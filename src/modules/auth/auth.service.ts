@@ -196,6 +196,10 @@ export class AuthService {
       }
 
       // Success! Return user data
+      if (!userProfileId) {
+        throw new BadRequestException('User profile ID is missing');
+      }
+
       return {
         user: {
           ...authData.user,
