@@ -1,11 +1,14 @@
 import { IsString, IsNumber, IsInt, Min, Max, IsOptional, IsPositive } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class CompleteSessionDto {
-  @ApiProperty({ example: 1, description: 'Session ID' })
-  @IsInt()
-  @IsPositive()
-  session_id: number;
+/**
+ * DTO para salvar resultado completo de treino
+ * Substitui CreateSessionDto e CompleteSessionDto
+ */
+export class SaveTrainingDto {
+  @ApiProperty({ example: 'squat', description: 'Exercise type identifier' })
+  @IsString()
+  exercise_type: string;
 
   @ApiProperty({ example: 15, description: 'Repetitions completed' })
   @IsInt()

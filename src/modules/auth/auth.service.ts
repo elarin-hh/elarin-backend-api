@@ -226,9 +226,9 @@ export class AuthService {
       const userProfileId = userProfile.id;
 
       // Step 1: Delete all user-related data
-      // Delete training sessions
+      // Delete training metrics
       await this.supabaseService.client
-        .from('training_sessions')
+        .from('metrics')
         .delete()
         .eq('user_id', userProfileId);
 

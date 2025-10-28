@@ -1,2 +1,1 @@
-export * from './create-session.dto';
-export * from './complete-session.dto';
+export * from './save-training.dto';

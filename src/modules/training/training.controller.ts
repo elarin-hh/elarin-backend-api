@@ -1,7 +1,7 @@
 import { Controller, Post, Get, Body, Param, Query, UseGuards, Req, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { TrainingService } from './training.service';
-import { CreateSessionDto, CompleteSessionDto } from './dto';
+import { SaveTrainingDto } from './dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -12,28 +12,16 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 export class TrainingController {
   constructor(private readonly trainingService: TrainingService) {}
 
-  @Post('sessions')
+  @Post('save')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create new training session' })
-  @ApiResponse({ status: 201, description: 'Session created successfully' })
+  @ApiOperation({ summary: 'Save completed training session' })
+  @ApiResponse({ status: 201, description: 'Training saved successfully' })
   @ApiResponse({ status: 404, description: 'Exercise not found' })
-  async createSession(
+  async saveTraining(
     @CurrentUser('id') userId: string,
-    @Body() createSessionDto: CreateSessionDto,
+    @Body() saveTrainingDto: SaveTrainingDto,
   ) {
-    return this.trainingService.createSession(userId, createSessionDto);
-  }
-
-  @Post('sessions/complete')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Complete training session' })
-  @ApiResponse({ status: 200, description: 'Session completed successfully' })
-  @ApiResponse({ status: 404, description: 'Session not found' })
-  async completeSession(
-    @CurrentUser('id') userId: string,
-    @Body() completeSessionDto: CompleteSessionDto,
-  ) {
-    return this.trainingService.completeSession(userId, completeSessionDto);
+    return this.trainingService.saveTraining(userId, saveTrainingDto);
   }
 
   @Get('history')
@@ -49,15 +37,15 @@ export class TrainingController {
     return this.trainingService.getHistory(userId, limit, offset);
   }
 
-  @Get('sessions/:id')
-  @ApiOperation({ summary: 'Get session details' })
-  @ApiParam({ name: 'id', description: 'Session ID', type: Number })
-  @ApiResponse({ status: 200, description: 'Session details retrieved' })
-  @ApiResponse({ status: 404, description: 'Session not found' })
-  async getSessionDetails(
+  @Get(':id')
+  @ApiOperation({ summary: 'Get training details' })
+  @ApiParam({ name: 'id', description: 'Training metric ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Training details retrieved' })
+  @ApiResponse({ status: 404, description: 'Training not found' })
+  async getTrainingDetails(
     @CurrentUser('id') userId: string,
-    @Param('id') sessionId: number,
+    @Param('id') metricId: number,
   ) {
-    return this.trainingService.getSessionDetails(userId, sessionId);
+    return this.trainingService.getTrainingDetails(userId, metricId);
   }
 }
