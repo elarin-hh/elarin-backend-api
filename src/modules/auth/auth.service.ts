@@ -13,7 +13,24 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { email, password, full_name } = registerDto;
+    const { email, password, full_name, birth_date, locale, marketing_consent } = registerDto;
+
+    // VALIDAR IDADE MÍNIMA (13 anos - LGPD Art. 14, §1º + ECA Lei 8.069/1990)
+    const birthDateObj = new Date(birth_date);
+    const today = new Date();
+    const age = today.getFullYear() - birthDateObj.getFullYear();
+    const monthDiff = today.getMonth() - birthDateObj.getMonth();
+
+    const actualAge = (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDateObj.getDate()))
+      ? age - 1
+      : age;
+
+    if (actualAge < 13) {
+      throw new BadRequestException(
+        'Você deve ter pelo menos 13 anos para criar uma conta. ' +
+        'Conforme Lei nº 13.709/2018 (LGPD) Art. 14, §1º e Lei nº 8.069/1990 (ECA).'
+      );
+    }
 
     const { data: authData, error } = await this.supabaseService.client.auth.signUp({
       email,
@@ -31,15 +48,26 @@ export class AuthService {
       throw new BadRequestException('Auth user not created');
     }
 
-    // Cria ou busca o perfil do usuário na tabela public.users
-    const userProfile = await this.userProfileService.getOrCreateUserProfile(
-      authData.user.id,
-      email,
-      full_name,
-    );
+    // Criar perfil com consentimento e verificação de idade
+    const { data: userProfile, error: userError } = await this.supabaseService.client
+      .from('users')
+      .insert({
+        auth_uid: authData.user.id,
+        email,
+        full_name,
+        birth_date,
+        age_verified: true,
+        consent_given_at: new Date().toISOString(), // Consentimento geral (Termos + Privacidade)
+        marketing_consent: marketing_consent || false,
+        locale: locale || 'pt-BR',
+      })
+      .select()
+      .single();
 
-    if (!userProfile) {
-      throw new BadRequestException('Failed to create user profile');
+    if (userError) {
+      // Rollback: deletar usuário do Auth
+      await this.supabaseService.client.auth.admin.deleteUser(authData.user.id);
+      throw new BadRequestException(userError.message);
     }
 
     // Criar exercícios padrão para o novo usuário
@@ -60,13 +88,30 @@ export class AuthService {
     };
   }
 
-  async registerWithOrganization(registerDto: { email: string; password: string; full_name: string; organization_id: number }) {
-    const { email, password, full_name, organization_id } = registerDto;
+  async registerWithOrganization(registerDto: { email: string; password: string; full_name: string; birth_date: string; organization_id: number; locale?: string; marketing_consent?: boolean }) {
+    const { email, password, full_name, birth_date, organization_id, locale, marketing_consent } = registerDto;
 
     let authUserId: string | null = null;
     let userProfileId: number | null = null;
 
     try {
+      // VALIDAR IDADE MÍNIMA (13 anos - LGPD Art. 14, §1º + ECA Lei 8.069/1990)
+      const birthDateObj = new Date(birth_date);
+      const today = new Date();
+      const age = today.getFullYear() - birthDateObj.getFullYear();
+      const monthDiff = today.getMonth() - birthDateObj.getMonth();
+
+      const actualAge = (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDateObj.getDate()))
+        ? age - 1
+        : age;
+
+      if (actualAge < 13) {
+        throw new BadRequestException(
+          'Você deve ter pelo menos 13 anos para criar uma conta. ' +
+          'Conforme Lei nº 13.709/2018 (LGPD) Art. 14, §1º e Lei nº 8.069/1990 (ECA).'
+        );
+      }
+
       // Step 1: Verify organization exists first
       const { data: org, error: orgError } = await this.supabaseService.client
         .from('organizations')
@@ -101,12 +146,25 @@ export class AuthService {
 
       authUserId = authData.user.id;
 
-      // Step 3: Create user profile
-      const userProfile = await this.userProfileService.getOrCreateUserProfile(
-        authUserId,
-        email,
-        full_name,
-      );
+      // Step 3: Create user profile with LGPD compliance fields
+      const { data: userProfile, error: userError } = await this.supabaseService.client
+        .from('users')
+        .insert({
+          auth_uid: authUserId,
+          email,
+          full_name,
+          birth_date,
+          age_verified: true,
+          consent_given_at: new Date().toISOString(),
+          marketing_consent: marketing_consent || false,
+          locale: locale || 'pt-BR',
+        })
+        .select()
+        .single();
+
+      if (userError) {
+        throw new BadRequestException(userError.message);
+      }
 
       if (!userProfile) {
         throw new BadRequestException('Failed to create user profile');
