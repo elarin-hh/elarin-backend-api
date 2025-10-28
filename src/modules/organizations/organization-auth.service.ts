@@ -33,10 +33,36 @@ export class OrganizationAuthService {
 
     const password_hash = await bcrypt.hash(password, 10);
 
+    // Generate code automatically if not provided
+    let code = organizationData.code;
+    if (!code) {
+      code = this.generateOrganizationCode(organizationData.name);
+
+      // Ensure code is unique
+      let codeExists = true;
+      let attempts = 0;
+      while (codeExists && attempts < 10) {
+        const { data: existingCode } = await this.supabaseService.client
+          .from('organizations')
+          .select('id')
+          .eq('code', code)
+          .single();
+
+        if (!existingCode) {
+          codeExists = false;
+        } else {
+          // Append random number to make it unique
+          code = `${this.generateOrganizationCode(organizationData.name)}-${Math.floor(Math.random() * 1000)}`;
+          attempts++;
+        }
+      }
+    }
+
     const { data: organization, error } = await this.supabaseService.client
       .from('organizations')
       .insert({
         ...organizationData,
+        code,
         email,
         password_hash,
       })
@@ -138,5 +164,20 @@ export class OrganizationAuthService {
   private sanitizeOrganization(organization: any) {
     const { password_hash, ...sanitized } = organization;
     return sanitized;
+  }
+
+  /**
+   * Generate a unique organization code from name
+   * Example: "Empresa XYZ Ltda" -> "empresa_xyz_ltda"
+   */
+  private generateOrganizationCode(name: string): string {
+    return name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove accents
+      .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+      .trim()
+      .split(/\s+/)
+      .join('_');
   }
 }

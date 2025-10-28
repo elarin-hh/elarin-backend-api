@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ExercisesModule } from './modules/exercises/exercises.module';
 import { TrainingModule } from './modules/training/training.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { PlansModule } from './modules/plans/plans.module';
 
 // Guards and Filters
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -38,6 +39,7 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
     ExercisesModule,
     TrainingModule,
     OrganizationsModule,
+    PlansModule,
   ],
   providers: [
     // Global guards
