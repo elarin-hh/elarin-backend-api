@@ -7,4 +7,8 @@ export default () => ({
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
   },
   logLevel: process.env.LOG_LEVEL || 'info',
+  ai: {
+    geminiApiKey: process.env.GEMINI_API_KEY,
+    elevenlabsApiKey: process.env.ELEVENLABS_API_KEY,
+  },
 });
