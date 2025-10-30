@@ -18,8 +18,8 @@ export class LlmService {
     } else {
       try {
         this.genAI = new GoogleGenerativeAI(apiKey);
-        this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-        this.logger.log('Gemini AI initialized successfully (gemini-2.5-flash)');
+        this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
+        this.logger.log('Gemini AI initialized successfully (gemini-2.5-flash-lite)');
       } catch (error) {
         this.logger.error(`Failed to initialize Gemini: ${error.message}`);
       }
@@ -36,7 +36,7 @@ export class LlmService {
       // Verificar moderação
       const moderated = this.containsOffensiveContent(input.feedback_base);
 
-      // Gerar texto natural (via Gemini se disponível, senão templates)
+      // SEMPRE gera texto via LLM/Templates para criar variações naturais
       const text = this.model
         ? await this.generateNaturalTextWithGemini(input, moderated)
         : this.generateNaturalTextWithTemplates(
@@ -45,6 +45,8 @@ export class LlmService {
             input.tone,
             moderated,
           );
+
+      const processMethod = this.model ? 'Gemini' : 'Templates';
 
       // Gerar micro-dica para iniciantes
       const micro_tip =
@@ -75,7 +77,7 @@ export class LlmService {
       };
 
       this.logger.log(
-        `Generated feedback speech: ${short_id} (moderated: ${moderated}, via: ${this.model ? 'Gemini' : 'Templates'})`,
+        `Generated feedback speech: ${short_id} (via: ${processMethod})`,
       );
 
       return response;
@@ -142,25 +144,37 @@ export class LlmService {
       'en-US': 'inglês americano',
     };
 
-    return `Você é um personal trainer virtual estilo Geração Z. Gere um feedback de voz natural e conciso para um praticante de exercícios.
+    // SEMPRE converte para natural com VARIAÇÕES criativas
+    return `Você é um personal trainer virtual estilo Geração Z. Gere um feedback de voz natural e VARIADO para um praticante de exercícios.
 
 Contexto:
 - Exercício: ${context.exercicio}
 - Nível: ${context.nivel}
-- Feedback técnico: ${feedback_base}
+- Feedback/Instrução: ${feedback_base}
 - Tom desejado: ${toneInstructions[tone] || 'neutro'}
 - Idioma: ${languageNames[context.language] || context.language}
 
-Instruções:
-1. Escreva APENAS 1-2 frases curtas e diretas
-2. Use linguagem GERAÇÃO Z: casual, descontraída, sem formalidade excessiva
-3. Use gírias leves e modernas quando apropriado (tipo: "tá top", "bora", "massa", "mandou bem")
-4. Seja ${toneInstructions[tone] || 'neutro'} mas sempre com vibe jovem e amigável
-5. NÃO use emojis, asteriscos ou formatação
-6. NÃO repita informações técnicas verbatim
-7. Foque em motivar de forma leve e autêntica, sem soar falso
+Instruções CRÍTICAS:
+1. VARIE a forma de falar - NÃO repita sempre a mesma estrutura
+2. Use expressões Gen Z diferentes: "ó", "tá ligado", "mano", "fala sério", "se liga", "bora", "tranquilo"
+3. Alterne entre estilos:
+   - Direto: "Seus pés tão muito juntos, abre mais"
+   - Motivacional: "Mano, afasta um pouco os pés aí que vai ficar top"
+   - Casual: "Ó, os pés tão grudados, dá uma abertura maior"
+   - Explicativo: "Teus pés precisam ficar mais separados, tá ligado?"
+4. MÁXIMO 1-2 frases curtas
+5. Seja ${toneInstructions[tone]} com vibe jovem e autêntica
+6. NÃO use emojis
+7. IMPORTANTE: Cada vez que gerar o mesmo erro, use palavras e estruturas DIFERENTES
 
-Responda APENAS com o texto do feedback, sem explicações adicionais.`;
+Exemplos de VARIAÇÃO para "pés muito juntos":
+- "Ó, os pés tão grudados, abre mais aí"
+- "Mano, afasta os pés, tá muito junto"
+- "Teus pés precisam ficar mais separados"
+- "Dá uma abertura maior nos pés"
+- "Os pés tão muito próximos, alarga a base"
+
+Responda APENAS com o texto do feedback, SEM explicações:`;
   }
 
   /**
