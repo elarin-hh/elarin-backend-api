@@ -7,7 +7,7 @@
     },
     {
       "type": "pushup",
-      "name": "Flexão",
+      "name": "Flexao",
       "is_active": false
     },
     {
@@ -18,6 +18,71 @@
     {
       "type": "plank",
       "name": "Prancha",
+      "is_active": false
+    },
+    {
+      "type": "burpee",
+      "name": "Burpee",
+      "is_active": false
+    },
+    {
+      "type": "lunge",
+      "name": "Afundo",
+      "is_active": false
+    },
+    {
+      "type": "deadlift",
+      "name": "Levantamento Terra",
+      "is_active": false
+    },
+    {
+      "type": "mountain_climber",
+      "name": "Alpinista",
+      "is_active": false
+    },
+    {
+      "type": "jumping_jack",
+      "name": "Polichinelo",
+      "is_active": false
+    },
+    {
+      "type": "wall_sit",
+      "name": "Cadeira na Parede",
+      "is_active": false
+    },
+    {
+      "type": "bench_press",
+      "name": "Supino Reto",
+      "is_active": false
+    },
+    {
+      "type": "barbell_row",
+      "name": "Remada",
+      "is_active": false
+    },
+    {
+      "type": "overhead_press",
+      "name": "Desenvolvimento",
+      "is_active": false
+    },
+    {
+      "type": "situp",
+      "name": "Abdominal",
+      "is_active": false
+    },
+    {
+      "type": "dip",
+      "name": "Paralela",
+      "is_active": false
+    },
+    {
+      "type": "calf_raise",
+      "name": "Panturrilha",
+      "is_active": false
+    },
+    {
+      "type": "jump_rope",
+      "name": "Pular Corda",
       "is_active": false
     }
   ]
