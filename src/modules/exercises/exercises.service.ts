@@ -52,6 +52,8 @@ export class ExercisesService {
       .from('exercises')
       .select('*')
       .eq('user_id', userIdInt)
+      // Active exercises first, then newest
+      .order('is_active', { ascending: false })
       .order('created_at', { ascending: false });
 
     if (error) {
