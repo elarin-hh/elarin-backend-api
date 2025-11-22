@@ -62,6 +62,17 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('me')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current authenticated user (cookie-based auth)' })
+  @ApiResponse({ status: 200, description: 'Authenticated user returned' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async me(@Req() request: any) {
+    return { user: request.user };
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Delete('account')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()

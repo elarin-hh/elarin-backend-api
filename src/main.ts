@@ -4,6 +4,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import helmet from '@fastify/helmet';
+import fastifyCookie, { FastifyCookieOptions } from '@fastify/cookie';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -47,6 +48,16 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
+
+  await app.register<FastifyCookieOptions>(fastifyCookie as any, {
+    secret: configService.get<string>('COOKIE_SECRET'),
+    parseOptions: {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+    },
+  });
 
   // Security
   await app.register(helmet as any, {
