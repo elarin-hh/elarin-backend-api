@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Req, Delete, Get, Patch } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Req, Delete, Get, Patch, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, RegisterWithOrganizationDto } from './dto';
@@ -6,6 +6,7 @@ import { UpdateConsentDto } from '../users/dto/consent.dto';
 import { UserProfileService } from './user-profile.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Public } from '../../common/decorators/public.decorator';
+import type { FastifyReply } from 'fastify';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -21,8 +22,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Register new user' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) reply: FastifyReply) {
+    const result = await this.authService.register(registerDto);
+    this.setAuthCookies(reply, result.session);
+    return result;
   }
 
   @Public()
@@ -31,8 +34,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Register new user with organization' })
   @ApiResponse({ status: 201, description: 'User registered and linked to organization successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  async registerWithOrganization(@Body() registerDto: RegisterWithOrganizationDto) {
-    return this.authService.registerWithOrganization(registerDto);
+  async registerWithOrganization(@Body() registerDto: RegisterWithOrganizationDto, @Res({ passthrough: true }) reply: FastifyReply) {
+    const result = await this.authService.registerWithOrganization(registerDto);
+    this.setAuthCookies(reply, result.session);
+    return result;
   }
 
   @Public()
@@ -41,8 +46,19 @@ export class AuthController {
   @ApiOperation({ summary: 'User login' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) reply: FastifyReply) {
+    const result = await this.authService.login(loginDto);
+    this.setAuthCookies(reply, result.session);
+    return result;
+  }
+
+  @Public()
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Clear auth cookies' })
+  async logout(@Res({ passthrough: true }) reply: FastifyReply) {
+    this.clearAuthCookies(reply);
+    return { success: true };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -86,5 +102,38 @@ export class AuthController {
   async exportUserData(@Req() request: any) {
     const user = request.user;
     return this.userProfileService.exportUserData(user.id);
+  }
+
+  private setAuthCookies(reply: FastifyReply, session: any) {
+    if (!session) return;
+
+    const isProd = process.env.NODE_ENV === 'production';
+    const access = session.access_token;
+    const refresh = session.refresh_token;
+    const accessMaxAge = session.expires_in ? Number(session.expires_in) : 3600;
+    const refreshMaxAge = 60 * 60 * 24 * 7; // 7 days
+
+    const cookieBase = `Path=/; HttpOnly; SameSite=Lax${isProd ? '; Secure' : ''}`;
+
+    const cookies: string[] = [];
+    if (access) {
+      cookies.push(`access_token=${access}; Max-Age=${accessMaxAge}; ${cookieBase}`);
+    }
+    if (refresh) {
+      cookies.push(`refresh_token=${refresh}; Max-Age=${refreshMaxAge}; ${cookieBase}`);
+    }
+
+    if (cookies.length) {
+      reply.header('Set-Cookie', cookies);
+    }
+  }
+
+  private clearAuthCookies(reply: FastifyReply) {
+    const base = 'Path=/; HttpOnly; SameSite=Lax; Max-Age=0';
+    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    reply.header('Set-Cookie', [
+      `access_token=; ${base}${secure}`,
+      `refresh_token=; ${base}${secure}`,
+    ]);
   }
 }
