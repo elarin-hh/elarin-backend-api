@@ -1,7 +1,7 @@
 {
   "name": "elarin-backend",
   "version": "1.0.0",
-  "description": "Elarin AI Fitness Trainer - NestJS + Fastify Backend API",
+  "description": "Elarin AI Fitness Trainer",
   "main": "dist/main.js",
   "scripts": {
     "dev": "nest start --watch",
