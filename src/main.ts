@@ -48,14 +48,20 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
+  const nodeEnv = configService.get<string>('nodeEnv') || 'development';
+  const rawCorsOrigins = configService.get<string>('corsOrigin') || '';
+  const allowedOrigins = rawCorsOrigins
+    .split(',')
+    .map((o) => o.trim())
+    .filter((o) => o.length > 0);
 
   await app.register<FastifyCookieOptions>(fastifyCookie as any, {
     secret: configService.get<string>('COOKIE_SECRET'),
     parseOptions: {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: nodeEnv === 'production' ? 'none' : 'lax',
       path: '/',
-      secure: process.env.NODE_ENV === 'production',
+      secure: nodeEnv === 'production',
     },
   });
 
@@ -67,11 +73,16 @@ async function bootstrap() {
   // CORS - Allow requests from local network
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests from localhost, 192.168.x.x network, and no origin (mobile apps, Postman, etc)
-      if (!origin ||
-          origin.includes('localhost') ||
-          origin.includes('127.0.0.1') ||
-          origin.match(/^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}(:\d+)?$/)) {
+      // Allow requests from tools (no origin) and local dev
+      const isLocal =
+        !origin ||
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1') ||
+        origin.match(/^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}(:\d+)?$/);
+
+      const isAllowedOrigin = allowedOrigins.includes(origin || '');
+
+      if (isLocal || isAllowedOrigin) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -79,7 +90,7 @@ async function bootstrap() {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
   });
 
   // Global validation pipe
