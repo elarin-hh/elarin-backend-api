@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import envConfig from './config/env.config';
+import { AppController } from './app.controller';
 
 // Modules
 import { SupabaseModule } from './common/services/supabase.module';
@@ -53,5 +54,6 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
       useClass: AllExceptionsFilter,
     },
   ],
+  controllers: [AppController],
 })
 export class AppModule {}
