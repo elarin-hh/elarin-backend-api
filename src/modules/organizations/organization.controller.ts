@@ -63,6 +63,39 @@ export class OrganizationController {
     return this.organizationService.getUsers(organizationId);
   }
 
+  @Get('users/pending')
+  @ApiOperation({ summary: 'Get pending users awaiting approval' })
+  @ApiResponse({ status: 200, description: 'Pending users list retrieved' })
+  async getPendingUsers(@CurrentOrganization('id') organizationId: number) {
+    return this.organizationService.getPendingUsers(organizationId);
+  }
+
+  @Patch('users/:userId/approve')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Approve pending user' })
+  @ApiParam({ name: 'userId', description: 'User ID', type: Number })
+  @ApiResponse({ status: 200, description: 'User approved successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async approveUser(
+    @CurrentOrganization('id') organizationId: number,
+    @Param('userId') userId: number,
+  ) {
+    return this.organizationService.approveUser(organizationId, userId);
+  }
+
+  @Patch('users/:userId/reject')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reject pending user' })
+  @ApiParam({ name: 'userId', description: 'User ID', type: Number })
+  @ApiResponse({ status: 200, description: 'User rejected successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async rejectUser(
+    @CurrentOrganization('id') organizationId: number,
+    @Param('userId') userId: number,
+  ) {
+    return this.organizationService.rejectUser(organizationId, userId);
+  }
+
   @Patch('users/:userId/toggle')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Toggle user status (active/inactive)' })

@@ -2,14 +2,12 @@ import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/
 import { SupabaseService } from '../../common/services/supabase.service';
 import { RegisterDto, LoginDto } from './dto';
 import { UserProfileService } from './user-profile.service';
-import { ExercisesService } from '../exercises/exercises.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly userProfileService: UserProfileService,
-    private readonly exercisesService: ExercisesService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -70,12 +68,8 @@ export class AuthService {
       throw new BadRequestException(userError.message);
     }
 
-    // Criar exercícios padrão para o novo usuário
-    try {
-      await this.exercisesService.seedDefaultExercises(authData.user.id);
-    } catch (error) {
-      // Silently fail - exercises can be created later
-    }
+    // REMOVED: Auto-seed exercises
+    // Exercises are now manually assigned by organization admins
 
     return {
       user: {
@@ -179,7 +173,8 @@ export class AuthService {
           user_id: userProfileId,
           organization_id: organization_id,
           role: 'member',
-          is_active: true,
+          status: 'PENDING',
+          is_active: false,
         })
         .select()
         .single();
@@ -188,12 +183,8 @@ export class AuthService {
         throw new Error(`Failed to link user to organization: ${membershipError.message || 'Unknown error'}`);
       }
 
-      // Step 5: Seed default exercises (optional - don't rollback if this fails)
-      try {
-        await this.exercisesService.seedDefaultExercises(authUserId);
-      } catch (error) {
-        // Silently fail - exercises can be created later
-      }
+      // Step 5: REMOVED - Auto-seed exercises
+      // Exercises are now manually assigned by organization admins
 
       // Success! Return user data
       if (!userProfileId) {
