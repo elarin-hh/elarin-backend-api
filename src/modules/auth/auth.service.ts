@@ -10,7 +10,7 @@ export class AuthService {
     private readonly supabaseService: SupabaseService,
     private readonly userProfileService: UserProfileService,
     private readonly exercisesService: ExercisesService,
-  ) {}
+  ) { }
 
   async register(registerDto: RegisterDto) {
     const { email, password, full_name, birth_date, locale, marketing_consent } = registerDto;
@@ -188,14 +188,6 @@ export class AuthService {
         throw new Error(`Failed to link user to organization: ${membershipError.message || 'Unknown error'}`);
       }
 
-      // Step 5: Seed default exercises (optional - don't rollback if this fails)
-      try {
-        await this.exercisesService.seedDefaultExercises(authUserId);
-      } catch (error) {
-        // Silently fail - exercises can be created later
-      }
-
-      // Success! Return user data
       if (!userProfileId) {
         throw new BadRequestException('User profile ID is missing');
       }
@@ -247,7 +239,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const userProfile = await this.userProfileService.getUserProfile(authData.user.id);
+    const userProfile = await this.userProfileService.getOrCreateUserProfile(
+      authData.user.id,
+      authData.user.email || '',
+      authData.user.user_metadata?.full_name
+    );
 
     return {
       user: {
@@ -267,7 +263,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid token');
     }
 
-    const userProfile = await this.userProfileService.getUserProfile(user.id);
+    const userProfile = await this.userProfileService.getOrCreateUserProfile(
+      user.id,
+      user.email || '',
+      user.user_metadata?.full_name
+    );
 
     return {
       ...user,
