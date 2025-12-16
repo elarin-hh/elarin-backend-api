@@ -130,11 +130,15 @@ export class OrganizationService {
       throw new NotFoundException('Membership not found');
     }
 
-    const newStatus = !membership.is_active;
+    const newIsActive = !membership.is_active;
+    const newStatus = newIsActive ? 'ACTIVE' : 'INACTIVE';
 
     const { error } = await this.supabaseService.client
       .from('memberships')
-      .update({ is_active: newStatus })
+      .update({
+        is_active: newIsActive,
+        status: newStatus
+      })
       .eq('organization_id', orgId)
       .eq('user_id', userId)
       .select()
