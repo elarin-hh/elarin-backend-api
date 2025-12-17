@@ -9,11 +9,19 @@ export class NotificationsService {
   /**
    * Get all active notifications for a specific organization
    * Includes global notifications (where organization_id is null)
+   * Filters out dismissed notifications
    */
   async getNotifications(organizationId: number) {
     const { data, error } = await this.supabaseService.client
       .from('notifications')
-      .select('*')
+      .select(`
+        *,
+        reads:organization_notification_reads!notification_id(
+          organization_id,
+          read_at,
+          dismissed_at
+        )
+      `)
       .eq('is_active', true)
       .or(`organization_id.is.null,organization_id.eq.${organizationId}`)
       .order('created_at', { ascending: false });
@@ -22,11 +30,22 @@ export class NotificationsService {
       throw new NotFoundException('Failed to fetch notifications');
     }
 
-    // Filter out expired notifications
+    // Filter out expired and dismissed notifications
     const now = new Date();
     const activeNotifications = (data || []).filter(notification => {
-      if (!notification.expires_at) return true;
-      return new Date(notification.expires_at) > now;
+      // Filter out expired notifications
+      if (notification.expires_at && new Date(notification.expires_at) <= now) {
+        return false;
+      }
+
+      // Filter out dismissed notifications for this organization
+      const reads = notification.reads || [];
+      const orgRead = reads.find((r: any) => r.organization_id === organizationId);
+      if (orgRead?.dismissed_at) {
+        return false; // Hide dismissed notifications
+      }
+
+      return true;
     });
 
     return activeNotifications;
@@ -116,5 +135,47 @@ export class NotificationsService {
     }
 
     return data;
+  }
+
+  /**
+   * Mark notification as read/dismissed for an organization
+   * Uses UPSERT to handle both create and update
+   */
+  async markAsRead(notificationId: number, organizationId: number) {
+    // Verify notification exists
+    const { data: notification } = await this.supabaseService.client
+      .from('notifications')
+      .select('id')
+      .eq('id', notificationId)
+      .single();
+
+    if (!notification) {
+      throw new NotFoundException('Notification not found');
+    }
+
+    const timestamp = new Date().toISOString();
+
+    // UPSERT: create new record or update existing
+    const { data, error } = await this.supabaseService.client
+      .from('organization_notification_reads')
+      .upsert(
+        {
+          organization_id: organizationId,
+          notification_id: notificationId,
+          read_at: timestamp,
+          dismissed_at: timestamp, // Mark as read = dismiss
+        },
+        {
+          onConflict: 'organization_id,notification_id',
+        }
+      )
+      .select()
+      .single();
+
+    if (error) {
+      throw new NotFoundException(`Failed to mark notification as read: ${error.message}`);
+    }
+
+    return { message: 'Notification marked as read', data };
   }
 }

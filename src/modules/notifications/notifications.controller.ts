@@ -68,4 +68,17 @@ export class NotificationsController {
   async toggleNotificationStatus(@Param('id') id: number) {
     return this.notificationsService.toggleNotificationStatus(id);
   }
+
+  @Patch(':id/read')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Mark notification as read/dismissed for current organization' })
+  @ApiParam({ name: 'id', description: 'Notification ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Notification marked as read' })
+  @ApiResponse({ status: 404, description: 'Notification not found' })
+  async markAsRead(
+    @Param('id') id: number,
+    @CurrentOrganization('id') organizationId: number
+  ) {
+    return this.notificationsService.markAsRead(id, organizationId);
+  }
 }
