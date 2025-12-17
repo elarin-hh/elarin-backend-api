@@ -28,6 +28,96 @@ export class OrganizationService {
     return data || [];
   }
 
+  async getPendingUsers(orgId: number) {
+    const { data, error } = await this.supabaseService.client
+      .from('memberships')
+      .select(`
+        *,
+        users:user_id (
+          id,
+          email,
+          full_name,
+          avatar_url,
+          created_at
+        )
+      `)
+      .eq('organization_id', orgId)
+      .eq('status', 'PENDING')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new NotFoundException('Failed to fetch pending users');
+    }
+
+    return data || [];
+  }
+
+  async approveUser(orgId: number, userId: number) {
+    const { data: membership } = await this.supabaseService.client
+      .from('memberships')
+      .select('*')
+      .eq('organization_id', orgId)
+      .eq('user_id', userId)
+      .single();
+
+    if (!membership) {
+      throw new NotFoundException('Membership not found');
+    }
+
+    const { error } = await this.supabaseService.client
+      .from('memberships')
+      .update({
+        status: 'ACTIVE',
+        is_active: true
+      })
+      .eq('organization_id', orgId)
+      .eq('user_id', userId);
+
+    if (error) {
+      throw new NotFoundException('Failed to approve user');
+    }
+
+    const { data: updatedMembership } = await this.supabaseService.client
+      .from('memberships')
+      .select(`
+        *,
+        users:user_id (*)
+      `)
+      .eq('organization_id', orgId)
+      .eq('user_id', userId)
+      .single();
+
+    return updatedMembership;
+  }
+
+  async rejectUser(orgId: number, userId: number) {
+    const { data: membership } = await this.supabaseService.client
+      .from('memberships')
+      .select('*')
+      .eq('organization_id', orgId)
+      .eq('user_id', userId)
+      .single();
+
+    if (!membership) {
+      throw new NotFoundException('Membership not found');
+    }
+
+    const { error } = await this.supabaseService.client
+      .from('memberships')
+      .update({
+        status: 'INACTIVE',
+        is_active: false
+      })
+      .eq('organization_id', orgId)
+      .eq('user_id', userId);
+
+    if (error) {
+      throw new NotFoundException('Failed to reject user');
+    }
+
+    return { message: 'User rejected successfully' };
+  }
+
   async toggleUserStatus(orgId: number, userId: number) {
     const { data: membership } = await this.supabaseService.client
       .from('memberships')
@@ -40,11 +130,15 @@ export class OrganizationService {
       throw new NotFoundException('Membership not found');
     }
 
-    const newStatus = !membership.is_active;
+    const newIsActive = !membership.is_active;
+    const newStatus = newIsActive ? 'ACTIVE' : 'INACTIVE';
 
     const { error } = await this.supabaseService.client
       .from('memberships')
-      .update({ is_active: newStatus })
+      .update({
+        is_active: newIsActive,
+        status: newStatus
+      })
       .eq('organization_id', orgId)
       .eq('user_id', userId)
       .select()
@@ -146,7 +240,8 @@ export class OrganizationService {
         user_id: userId,
         organization_id: orgId,
         role: 'member',
-        is_active: true,
+        status: 'PENDING',
+        is_active: false,
       })
       .select()
       .single();
