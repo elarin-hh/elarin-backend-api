@@ -14,7 +14,13 @@ export class SupabaseService {
       throw new Error('Supabase credentials not found in environment variables');
     }
 
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
   }
 
   get client(): SupabaseClient {

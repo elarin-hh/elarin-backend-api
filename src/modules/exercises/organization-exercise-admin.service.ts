@@ -14,7 +14,7 @@ export class OrganizationExerciseAdminService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly exerciseTemplatesService: ExerciseTemplatesService,
-  ) {}
+  ) { }
 
   /**
    * Assign exercise from template to user
@@ -33,16 +33,29 @@ export class OrganizationExerciseAdminService {
       throw new BadRequestException('Invalid or inactive exercise template');
     }
 
-    // 3. Check if user already has this exercise type (UNIQUE constraint)
-    const { data: existing } = await this.supabaseService.client
+    // 3. Check if user already has this exercise type
+    // MANUAL JOIN CHECK: Fetch exercises and verify type in code
+    const { data: userExercises } = await this.supabaseService.client
       .from('app_user_exercises')
-      .select('id')
-      .eq('user_id', targetUserId)
-      .eq('type', template.type)
-      .maybeSingle();
+      .select('id, template_id')
+      .eq('user_id', targetUserId);
 
-    if (existing) {
-      throw new ConflictException('User already has this exercise type');
+    if (userExercises && userExercises.length > 0) {
+      const templateIds = userExercises.map((e: any) => e.template_id).filter(Boolean);
+
+      if (templateIds.length > 0) {
+        // Fetch types of existing exercises
+        const { data: userTemplates } = await this.supabaseService.client
+          .from('app_exercise_templates')
+          .select('id, type')
+          .in('id', templateIds);
+
+        // Check for type collision
+        const hasType = userTemplates?.some((t: any) => t.type === template.type);
+        if (hasType) {
+          throw new ConflictException('User already has this exercise type');
+        }
+      }
     }
 
     // 4. Create exercise record
@@ -50,19 +63,24 @@ export class OrganizationExerciseAdminService {
       .from('app_user_exercises')
       .insert({
         user_id: targetUserId,
-        type: template.type,
-        name: template.name,
         template_id: templateId,
         is_active: template.is_active,
+        config: template.default_config || {}
       })
       .select()
       .single();
 
     if (error) {
-      throw new InternalServerErrorException('Failed to assign exercise');
+      console.error('Assign Exercise Error:', error);
+      throw new InternalServerErrorException('Failed to assign exercise: ' + error.message);
     }
 
-    return data;
+    // Merge template data for response
+    return {
+      ...data,
+      type: template.type,
+      name: template.name,
+    };
   }
 
   /**
@@ -95,7 +113,8 @@ export class OrganizationExerciseAdminService {
       .eq('id', exerciseId);
 
     if (error) {
-      throw new InternalServerErrorException('Failed to remove exercise');
+      console.error('Remove Exercise Error:', error);
+      throw new InternalServerErrorException('Failed to remove exercise: ' + error.message);
     }
   }
 
@@ -109,18 +128,140 @@ export class OrganizationExerciseAdminService {
     // 1. Verify target user belongs to organization
     await this.verifyUserInOrganization(organizationId, targetUserId);
 
-    // 2. Fetch user's exercises
-    const { data, error } = await this.supabaseService.client
+    // 2. Fetch user's exercises (RAW)
+    const { data: exercises, error } = await this.supabaseService.client
       .from('app_user_exercises')
-      .select('id, type, name, is_active, created_at, template_id')
+      .select('*')
       .eq('user_id', targetUserId)
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new InternalServerErrorException('Failed to fetch exercises');
+      console.error('Get Exercises Error:', error);
+      throw new InternalServerErrorException('Failed to fetch exercises: ' + error.message);
     }
 
-    return data || [];
+    if (!exercises || exercises.length === 0) {
+      return [];
+    }
+
+    // 3. Fetch related templates (MANUAL JOIN)
+    const templateIds = exercises.map((e: any) => e.template_id).filter(Boolean);
+    const uniqueTemplateIds = [...new Set(templateIds)];
+
+    let templatesMap: Record<number, any> = {};
+
+    if (uniqueTemplateIds.length > 0) {
+      const { data: templates } = await this.supabaseService.client
+        .from('app_exercise_templates')
+        .select('id, type, name')
+        .in('id', uniqueTemplateIds);
+
+      if (templates) {
+        templates.forEach((t: any) => {
+          templatesMap[t.id] = t;
+        });
+      }
+    }
+
+    // 4. Merge data
+    return exercises.map((ex: any) => {
+      const template = templatesMap[ex.template_id];
+      return {
+        id: ex.id,
+        user_id: targetUserId,
+        template_id: ex.template_id,
+        is_active: ex.is_active,
+        created_at: ex.created_at,
+        config: ex.config,
+        type: template?.type || 'unknown',
+        name: template?.name || 'Unknown Exercise'
+      };
+    });
+  }
+
+  /**
+   * Get exercise full configuration (Fixed + Default + User Overrides)
+   */
+  async getExerciseFullConfig(
+    organizationId: number,
+    userId: number,
+    exerciseId: number,
+  ) {
+    await this.verifyUserInOrganization(organizationId, userId);
+
+    const { data: exercise, error } = await this.supabaseService.client
+      .from('app_user_exercises')
+      .select(`
+        *,
+        template:app_exercise_templates (
+          id,
+          type,
+          name,
+          fixed_config,
+          default_config
+        )
+      `)
+      .eq('id', exerciseId)
+      .eq('user_id', userId)
+      .single();
+
+    if (error || !exercise) {
+      throw new NotFoundException('Exercise not found');
+    }
+
+    return {
+      exercise_id: exercise.id,
+      exercise_name: exercise.template.name,
+      fixed_config: exercise.template.fixed_config,
+      default_config: exercise.template.default_config,
+      user_config: exercise.config || null,
+    };
+  }
+
+  /**
+   * Update user exercise info/config
+   */
+  async updateUserExerciseConfig(
+    organizationId: number,
+    userId: number,
+    exerciseId: number,
+    newConfig: Record<string, any>,
+  ) {
+    await this.verifyUserInOrganization(organizationId, userId);
+
+    // 1. Get exercise and template to validate keys
+    const { data: exercise } = await this.supabaseService.client
+      .from('app_user_exercises')
+      .select(`
+        *,
+        template:app_exercise_templates (
+          default_config
+        )
+      `)
+      .eq('id', exerciseId)
+      .eq('user_id', userId)
+      .single();
+
+    if (!exercise) {
+      throw new NotFoundException('Exercise not found');
+    }
+
+    // 2. Validate that keys in newConfig exist in default_config (Partial validation)
+    // We allow saving whatever for now, but in strict mode we should filter.
+    // Ideally we merge with existing config.
+
+    const { data, error } = await this.supabaseService.client
+      .from('app_user_exercises')
+      .update({ config: newConfig })
+      .eq('id', exerciseId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new InternalServerErrorException('Failed to update config');
+    }
+
+    return data;
   }
 
   /**

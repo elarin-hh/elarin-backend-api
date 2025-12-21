@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { OrganizationService } from './organization.service';
@@ -69,6 +70,17 @@ export class OrganizationController {
   @ApiResponse({ status: 200, description: 'Pending users list retrieved' })
   async getPendingUsers(@Req() request: any) {
     return this.organizationService.getPendingUsers(request.organization.id);
+  }
+
+  @Get('users/:userId')
+  @ApiOperation({ summary: 'Get a single user from organization' })
+  @ApiResponse({ status: 200, description: 'User details' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getMember(
+    @Req() request: any,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    return this.organizationService.getMember(request.organization.id, userId);
   }
 
   @Patch('users/:userId/approve')

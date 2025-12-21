@@ -9,6 +9,8 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Req,
+  Patch,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { OrganizationExerciseAdminService } from './organization-exercise-admin.service';
@@ -27,7 +29,7 @@ export class OrganizationExerciseAdminController {
   constructor(
     private readonly organizationExerciseAdminService: OrganizationExerciseAdminService,
     private readonly exerciseTemplatesService: ExerciseTemplatesService,
-  ) {}
+  ) { }
 
   @Get('exercise-templates')
   @ApiOperation({ summary: 'List available exercise templates for assignment' })
@@ -42,10 +44,10 @@ export class OrganizationExerciseAdminController {
   @ApiResponse({ status: 200, description: "User's exercises retrieved" })
   @ApiResponse({ status: 403, description: 'User not in organization' })
   async getUserExercises(
-    @CurrentOrganization('id') organizationId: number,
+    @Req() request: any,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
-    return this.organizationExerciseAdminService.getUserExercises(organizationId, userId);
+    return this.organizationExerciseAdminService.getUserExercises(request.organization.id, userId);
   }
 
   @Post('users/:userId/exercises')
@@ -57,12 +59,12 @@ export class OrganizationExerciseAdminController {
   @ApiResponse({ status: 403, description: 'User not in organization' })
   @ApiResponse({ status: 409, description: 'User already has this exercise type' })
   async assignExercise(
-    @CurrentOrganization('id') organizationId: number,
+    @Req() request: any,
     @Param('userId', ParseIntPipe) userId: number,
     @Body() assignExerciseDto: AssignExerciseDto,
   ) {
     return this.organizationExerciseAdminService.assignExerciseToUser(
-      organizationId,
+      request.organization.id,
       userId,
       assignExerciseDto.template_id,
     );
@@ -76,16 +78,46 @@ export class OrganizationExerciseAdminController {
   @ApiResponse({ status: 200, description: 'Exercise removed successfully' })
   @ApiResponse({ status: 403, description: 'User not in organization' })
   @ApiResponse({ status: 404, description: 'Exercise not found' })
-  async removeExercise(
-    @CurrentOrganization('id') organizationId: number,
+  async removeExerciseFromUser( // Renamed method
+    @Req() request: any,
     @Param('userId', ParseIntPipe) userId: number,
     @Param('exerciseId', ParseIntPipe) exerciseId: number,
   ) {
-    await this.organizationExerciseAdminService.removeExerciseFromUser(
-      organizationId,
+    // Modified to return the service call directly as per instruction's code edit
+    return this.organizationExerciseAdminService.removeExerciseFromUser(
+      request.organization.id,
       userId,
       exerciseId,
     );
-    return { message: 'Exercise removed successfully' };
+  }
+
+  @Get('users/:userId/exercises/:exerciseId/config')
+  @ApiOperation({ summary: 'Get full exercise configuration' })
+  async getExerciseConfig(
+    @Req() request: any,
+    @Param('userId', ParseIntPipe) userId: number,
+    @Param('exerciseId', ParseIntPipe) exerciseId: number,
+  ) {
+    return this.organizationExerciseAdminService.getExerciseFullConfig(
+      request.organization.id,
+      userId,
+      exerciseId,
+    );
+  }
+
+  @Patch('users/:userId/exercises/:exerciseId/config')
+  @ApiOperation({ summary: 'Update exercise configuration' })
+  async updateExerciseConfig(
+    @Req() request: any,
+    @Param('userId', ParseIntPipe) userId: number,
+    @Param('exerciseId', ParseIntPipe) exerciseId: number,
+    @Body() body: { config: Record<string, any> },
+  ) {
+    return this.organizationExerciseAdminService.updateUserExerciseConfig(
+      request.organization.id,
+      userId,
+      exerciseId,
+      body.config,
+    );
   }
 }

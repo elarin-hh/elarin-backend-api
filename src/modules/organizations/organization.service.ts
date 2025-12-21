@@ -3,7 +3,7 @@ import { SupabaseService } from '../../common/services/supabase.service';
 
 @Injectable()
 export class OrganizationService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(private readonly supabaseService: SupabaseService) { }
 
   async getUsers(orgId: number) {
     const { data, error } = await this.supabaseService.client
@@ -254,5 +254,32 @@ export class OrganizationService {
       message: 'User linked to organization successfully',
       membership: data,
     };
+  }
+
+  async getMember(orgId: number, userId: number) {
+    const { data, error } = await this.supabaseService.client
+      .from('app_memberships')
+      .select(`
+        *,
+        users:user_id (
+          id,
+          email,
+          full_name,
+          avatar_url,
+          created_at,
+          birth_date,
+          height_cm,
+          weight_kg
+        )
+      `)
+      .eq('organization_id', orgId)
+      .eq('user_id', userId)
+      .single();
+
+    if (error || !data) {
+      throw new NotFoundException('Member not found');
+    }
+
+    return data;
   }
 }
