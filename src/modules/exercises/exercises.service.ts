@@ -1,5 +1,14 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { SupabaseService } from '../../common/services/supabase.service';
+import { StaticConfigService } from './static-config.service';
+import { ExerciseWhitelistService } from './exercise-whitelist.service';
+import {
+  type ExerciseConfigOverride,
+  type MergedExerciseConfig,
+  type ExerciseMetric,
+  validateOverride
+} from './schemas/config-schema';
+
 
 export interface UpdateExerciseConfigDto {
   config: Record<string, any>;
@@ -7,10 +16,17 @@ export interface UpdateExerciseConfigDto {
 
 @Injectable()
 export class ExercisesService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  private readonly logger = new Logger(ExercisesService.name);
+
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly staticConfigService: StaticConfigService,
+    private readonly whitelistService: ExerciseWhitelistService
+  ) { }
 
   /**
    * Get all exercises (active and inactive) for a specific user
+   * Filters out exercises whose type is not in the whitelist (default-exercises.json)
    */
   async getUserExercises(userId: string) {
     const userIdInt = await this.getUserIdFromUuid(userId);
@@ -26,7 +42,19 @@ export class ExercisesService {
       throw new InternalServerErrorException('Failed to fetch exercises');
     }
 
-    return data || [];
+    // Filter exercises based on whitelist
+    const allExercises = data || [];
+    const filteredExercises = await this.whitelistService.filterAllowedExercises(allExercises);
+
+    // Log if any exercises were filtered out
+    const filteredCount = allExercises.length - filteredExercises.length;
+    if (filteredCount > 0) {
+      this.logger.warn(
+        `Filtered out ${filteredCount} exercises not in whitelist for user ${userId}`
+      );
+    }
+
+    return filteredExercises;
   }
 
   /**
@@ -52,6 +80,13 @@ export class ExercisesService {
       throw new NotFoundException('Exercise not found');
     }
 
+    // Validate that newConfig only contains variable fields
+    if (!validateOverride(newConfig)) {
+      throw new InternalServerErrorException(
+        'Invalid config: only variable fields (heuristicConfig, metrics) can be updated'
+      );
+    }
+
     const updatedConfig = {
       ...(currentExercise.config || {}),
       ...newConfig
@@ -70,6 +105,122 @@ export class ExercisesService {
     }
 
     return data;
+  }
+
+  /**
+   * Get complete exercise configuration (static + database overrides merged)
+   * This is the main method to retrieve configs for training
+   */
+  async getExerciseFullConfig(
+    exerciseId: string,
+    userId: string
+  ): Promise<MergedExerciseConfig> {
+    const userIdInt = await this.getUserIdFromUuid(userId);
+
+    // 1. Fetch exercise from database
+    const { data: exercise, error } = await this.supabaseService.client
+      .from('exercises')
+      .select('type, config')
+      .eq('id', exerciseId)
+      .eq('user_id', userIdInt)
+      .single();
+
+    if (error || !exercise) {
+      throw new NotFoundException('Exercise not found');
+    }
+
+    // 2. Load static config for this exercise type
+    const staticConfig = await this.staticConfigService.loadStaticConfig(
+      exercise.type
+    );
+
+    // 3. Merge static config with database overrides
+    const mergedConfig = this.mergeConfigs(staticConfig, exercise.config || {});
+
+    this.logger.debug(
+      `Merged config for exercise ${exerciseId} (type: ${exercise.type})`
+    );
+
+    return mergedConfig;
+  }
+
+  /**
+   * Merge static configuration with database overrides
+   * Fixed fields are NEVER overridden, only variable fields are merged
+   */
+  private mergeConfigs(
+    staticConfig: any,
+    dbOverrides: ExerciseConfigOverride
+  ): MergedExerciseConfig {
+    const fixed = staticConfig._fixed;
+    const defaults = staticConfig._defaults;
+
+    // 1. Start with fixed heuristic config (if any)
+    // 2. Apply defaults (variable params)
+    // 3. Apply database overrides (user params)
+    // 4. Re-apply fixed params (CRITICAL: ensures partial fixed values usually win)
+    const heuristicConfig = {
+      ...(fixed.heuristicConfig || {}),
+      ...defaults.heuristicConfig,
+      ...(dbOverrides.heuristicConfig || {}),
+      ...(fixed.heuristicConfig || {}) // Safety: Fixed ALWAYS wins
+    };
+
+    // Merge metrics (if present in overrides)
+    const metrics = this.mergeMetrics(
+      defaults.metrics || [],
+      dbOverrides.metrics || []
+    );
+
+    return {
+      exerciseName: staticConfig.exerciseName,
+      modelPath: staticConfig.modelPath,
+
+      // Fixed fields (from _fixed section)
+      feedbackCooldownMs: fixed.feedbackCooldownMs,
+      analysisInterval: fixed.analysisInterval,
+      mlConfig: fixed.mlConfig,
+      feedbackConfig: fixed.feedbackConfig,
+      components: fixed.components,
+
+      // Variable fields (merged)
+      heuristicConfig,
+      metrics,
+
+      completion: staticConfig.completion
+    };
+  }
+
+  /**
+   * Merge metrics arrays, allowing overrides by metric id
+   */
+  private mergeMetrics(
+    defaultMetrics: ExerciseMetric[],
+    overrideMetrics: Partial<ExerciseMetric>[]
+  ): ExerciseMetric[] {
+    if (!overrideMetrics || overrideMetrics.length === 0) {
+      return defaultMetrics;
+    }
+
+    // Create a map of overrides by id
+    const overrideMap = new Map<string, Partial<ExerciseMetric>>();
+    overrideMetrics.forEach(metric => {
+      if (metric.id) {
+        overrideMap.set(metric.id, metric);
+      }
+    });
+
+    // Merge each default metric with its override (if exists)
+    return defaultMetrics.map(defaultMetric => {
+      const override = overrideMap.get(defaultMetric.id);
+      if (override) {
+        return {
+          ...defaultMetric,
+          ...override
+        };
+      }
+      return defaultMetric;
+    });
   }
 
   /**
