@@ -12,7 +12,7 @@ export class OrganizationAuthGuard implements CanActivate {
   constructor(
     private readonly organizationAuthService: OrganizationAuthService,
     private readonly reflector: Reflector,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
@@ -25,13 +25,11 @@ export class OrganizationAuthGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers.authorization;
+    const token = this.extractToken(request);
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('No token provided');
+    if (!token) {
+      throw new UnauthorizedException('Token not provided');
     }
-
-    const token = authHeader.substring(7);
 
     try {
       const organization = await this.organizationAuthService.verifyToken(token);
@@ -40,5 +38,38 @@ export class OrganizationAuthGuard implements CanActivate {
     } catch (error) {
       throw new UnauthorizedException('Invalid token');
     }
+  }
+
+  private extractToken(request: any): string | undefined {
+    const fromHeader = this.extractTokenFromHeader(request);
+    if (fromHeader) return fromHeader;
+
+    return this.extractTokenFromCookies(request);
+  }
+
+  private extractTokenFromHeader(request: any): string | undefined {
+    const authHeader = request.headers.authorization;
+    if (!authHeader) {
+      return undefined;
+    }
+    const [type, token] = authHeader.split(' ');
+    return type === 'Bearer' ? token : undefined;
+  }
+
+  private extractTokenFromCookies(request: any): string | undefined {
+    const cookies = request?.cookies || this.parseCookieHeader(request?.headers?.cookie);
+    if (!cookies) return undefined;
+    return cookies['org_access_token'];
+  }
+
+  private parseCookieHeader(cookieHeader?: string): Record<string, string> | undefined {
+    if (!cookieHeader) return undefined;
+    return cookieHeader.split(';').reduce((acc: Record<string, string>, part: string) => {
+      const [key, ...value] = part.trim().split('=');
+      if (key) {
+        acc[key] = decodeURIComponent(value.join('='));
+      }
+      return acc;
+    }, {});
   }
 }

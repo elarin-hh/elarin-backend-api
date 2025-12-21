@@ -9,6 +9,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { OrganizationService } from './organization.service';
@@ -28,7 +29,7 @@ export class OrganizationController {
   constructor(
     private readonly organizationService: OrganizationService,
     private readonly organizationAuthService: OrganizationAuthService,
-  ) {}
+  ) { }
 
   @Get('active')
   @Public()
@@ -49,25 +50,25 @@ export class OrganizationController {
   }
 
   @Get('profile')
-  @ApiOperation({ summary: 'Get current organization profile' })
-  @ApiResponse({ status: 200, description: 'Organization profile retrieved' })
+  @ApiOperation({ summary: 'Get organization profile' })
+  @ApiResponse({ status: 200, description: 'Organization profile returned successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getProfile(@CurrentOrganization('id') organizationId: number) {
-    return this.organizationAuthService.getProfile(organizationId);
+  async getProfile(@Req() request: any) {
+    return { organization: request.organization };
   }
 
   @Get('users')
   @ApiOperation({ summary: 'Get all users linked to organization' })
   @ApiResponse({ status: 200, description: 'Users list retrieved' })
-  async getUsers(@CurrentOrganization('id') organizationId: number) {
-    return this.organizationService.getUsers(organizationId);
+  async getUsers(@Req() request: any) {
+    return this.organizationService.getUsers(request.organization.id);
   }
 
   @Get('users/pending')
   @ApiOperation({ summary: 'Get pending users awaiting approval' })
   @ApiResponse({ status: 200, description: 'Pending users list retrieved' })
-  async getPendingUsers(@CurrentOrganization('id') organizationId: number) {
-    return this.organizationService.getPendingUsers(organizationId);
+  async getPendingUsers(@Req() request: any) {
+    return this.organizationService.getPendingUsers(request.organization.id);
   }
 
   @Patch('users/:userId/approve')
@@ -77,10 +78,10 @@ export class OrganizationController {
   @ApiResponse({ status: 200, description: 'User approved successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async approveUser(
-    @CurrentOrganization('id') organizationId: number,
+    @Req() request: any,
     @Param('userId') userId: number,
   ) {
-    return this.organizationService.approveUser(organizationId, userId);
+    return this.organizationService.approveUser(request.organization.id, userId);
   }
 
   @Patch('users/:userId/reject')
@@ -90,10 +91,10 @@ export class OrganizationController {
   @ApiResponse({ status: 200, description: 'User rejected successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async rejectUser(
-    @CurrentOrganization('id') organizationId: number,
+    @Req() request: any,
     @Param('userId') userId: number,
   ) {
-    return this.organizationService.rejectUser(organizationId, userId);
+    return this.organizationService.rejectUser(request.organization.id, userId);
   }
 
   @Patch('users/:userId/toggle')
@@ -103,10 +104,10 @@ export class OrganizationController {
   @ApiResponse({ status: 200, description: 'User status updated' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async toggleUserStatus(
-    @CurrentOrganization('id') organizationId: number,
+    @Req() request: any,
     @Param('userId') userId: number,
   ) {
-    return this.organizationService.toggleUserStatus(organizationId, userId);
+    return this.organizationService.toggleUserStatus(request.organization.id, userId);
   }
 
   @Delete('users/:userId')
@@ -116,16 +117,16 @@ export class OrganizationController {
   @ApiResponse({ status: 200, description: 'User removed successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async removeUser(
-    @CurrentOrganization('id') organizationId: number,
+    @Req() request: any,
     @Param('userId') userId: number,
   ) {
-    return this.organizationService.removeUser(organizationId, userId);
+    return this.organizationService.removeUser(request.organization.id, userId);
   }
 
-  @Get('stats')
-  @ApiOperation({ summary: 'Get organization statistics' })
+  @Get('users/stats')
+  @ApiOperation({ summary: 'Get organization user statistics' })
   @ApiResponse({ status: 200, description: 'Statistics retrieved' })
-  async getStats(@CurrentOrganization('id') organizationId: number) {
-    return this.organizationService.getStats(organizationId);
+  async getStats(@Req() request: any) {
+    return this.organizationService.getStats(request.organization.id);
   }
 }

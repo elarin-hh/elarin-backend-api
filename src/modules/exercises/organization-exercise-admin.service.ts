@@ -35,7 +35,7 @@ export class OrganizationExerciseAdminService {
 
     // 3. Check if user already has this exercise type (UNIQUE constraint)
     const { data: existing } = await this.supabaseService.client
-      .from('exercises')
+      .from('app_user_exercises')
       .select('id')
       .eq('user_id', targetUserId)
       .eq('type', template.type)
@@ -47,7 +47,7 @@ export class OrganizationExerciseAdminService {
 
     // 4. Create exercise record
     const { data, error } = await this.supabaseService.client
-      .from('exercises')
+      .from('app_user_exercises')
       .insert({
         user_id: targetUserId,
         type: template.type,
@@ -78,7 +78,7 @@ export class OrganizationExerciseAdminService {
 
     // 2. Verify exercise belongs to user
     const { data: exercise } = await this.supabaseService.client
-      .from('exercises')
+      .from('app_user_exercises')
       .select('id, user_id')
       .eq('id', exerciseId)
       .eq('user_id', targetUserId)
@@ -90,7 +90,7 @@ export class OrganizationExerciseAdminService {
 
     // 3. Delete exercise
     const { error } = await this.supabaseService.client
-      .from('exercises')
+      .from('app_user_exercises')
       .delete()
       .eq('id', exerciseId);
 
@@ -111,7 +111,7 @@ export class OrganizationExerciseAdminService {
 
     // 2. Fetch user's exercises
     const { data, error } = await this.supabaseService.client
-      .from('exercises')
+      .from('app_user_exercises')
       .select('id, type, name, is_active, created_at, template_id')
       .eq('user_id', targetUserId)
       .order('created_at', { ascending: false });
@@ -132,7 +132,7 @@ export class OrganizationExerciseAdminService {
     userId: number,
   ): Promise<void> {
     const { data: membership, error } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .select('id')
       .eq('organization_id', organizationId)
       .eq('user_id', userId)

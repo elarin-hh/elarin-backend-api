@@ -14,7 +14,7 @@ export class TrainingService {
    */
   private async getUserIdFromUuid(userUuid: string): Promise<number> {
     const { data, error } = await this.supabaseService.client
-      .from('users')
+      .from('app_users')
       .select('id')
       .eq('auth_uid', userUuid)
       .single();
@@ -32,7 +32,7 @@ export class TrainingService {
    */
   private async getOrganizationId(userIdInt: number): Promise<number | null> {
     const { data: membership } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .select('organization_id')
       .eq('user_id', userIdInt)
       .eq('is_active', true)
@@ -54,7 +54,7 @@ export class TrainingService {
 
     // Verificar se exercício existe
     const { data: exercise, error: exerciseError } = await this.supabaseService.client
-      .from('exercises')
+      .from('app_user_exercises')
       .select('*')
       .eq('type', saveTrainingDto.exercise_type)
       .eq('is_active', true)
@@ -69,7 +69,7 @@ export class TrainingService {
 
     // Criar registro de métricas diretamente
     const { data: metric, error: metricsError } = await this.supabaseService.client
-      .from('metrics')
+      .from('app_training_sessions')
       .insert({
         user_id: userIdInt,
         organization_id: organizationId,
@@ -99,7 +99,7 @@ export class TrainingService {
     const userIdInt = await this.getUserIdFromUuid(userId);
 
     const { data, error } = await this.supabaseService.client
-      .from('metrics')
+      .from('app_training_sessions')
       .select('*')
       .eq('user_id', userIdInt)
       .order('created_at', { ascending: false })
@@ -121,7 +121,7 @@ export class TrainingService {
     const userIdInt = await this.getUserIdFromUuid(userId);
 
     const { data, error } = await this.supabaseService.client
-      .from('metrics')
+      .from('app_training_sessions')
       .select('*')
       .eq('id', metricId)
       .eq('user_id', userIdInt)

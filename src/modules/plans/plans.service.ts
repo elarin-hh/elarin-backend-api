@@ -7,7 +7,7 @@ export class PlansService {
 
   async getAllActivePlans() {
     const { data, error } = await this.supabaseService.client
-      .from('plans')
+      .from('app_plans')
       .select('*')
       .eq('is_active', true)
       .order('price_cents', { ascending: true });

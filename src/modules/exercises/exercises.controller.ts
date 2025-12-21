@@ -31,7 +31,7 @@ export class ExercisesController {
   @Get(':id/full-config')
   @ApiOperation({ summary: 'Get complete exercise configuration with user customizations' })
   async getFullConfig(@Req() req: any, @Param('id') id: string) {
-    return this.exercisesService.getExerciseFullConfig(id, req.user.id);
+    return this.exercisesService.getExerciseConfig(id, req.user.id);
   }
 
   @Patch(':id/config')

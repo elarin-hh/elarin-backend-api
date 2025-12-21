@@ -7,7 +7,7 @@ export class OrganizationService {
 
   async getUsers(orgId: number) {
     const { data, error } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .select(`
         *,
         users:user_id (
@@ -30,7 +30,7 @@ export class OrganizationService {
 
   async getPendingUsers(orgId: number) {
     const { data, error } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .select(`
         *,
         users:user_id (
@@ -54,7 +54,7 @@ export class OrganizationService {
 
   async approveUser(orgId: number, userId: number) {
     const { data: membership } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .select('*')
       .eq('organization_id', orgId)
       .eq('user_id', userId)
@@ -65,7 +65,7 @@ export class OrganizationService {
     }
 
     const { error } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .update({
         status: 'ACTIVE',
         is_active: true
@@ -78,7 +78,7 @@ export class OrganizationService {
     }
 
     const { data: updatedMembership } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .select(`
         *,
         users:user_id (*)
@@ -92,7 +92,7 @@ export class OrganizationService {
 
   async rejectUser(orgId: number, userId: number) {
     const { data: membership } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .select('*')
       .eq('organization_id', orgId)
       .eq('user_id', userId)
@@ -103,7 +103,7 @@ export class OrganizationService {
     }
 
     const { error } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .update({
         status: 'INACTIVE',
         is_active: false
@@ -120,7 +120,7 @@ export class OrganizationService {
 
   async toggleUserStatus(orgId: number, userId: number) {
     const { data: membership } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .select('*')
       .eq('organization_id', orgId)
       .eq('user_id', userId)
@@ -134,7 +134,7 @@ export class OrganizationService {
     const newStatus = newIsActive ? 'ACTIVE' : 'INACTIVE';
 
     const { error } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .update({
         is_active: newIsActive,
         status: newStatus
@@ -149,7 +149,7 @@ export class OrganizationService {
     }
 
     const { data: user } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .select(`
         *,
         users:user_id (*)
@@ -163,7 +163,7 @@ export class OrganizationService {
 
   async removeUser(orgId: number, userId: number) {
     const { error } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .delete()
       .eq('organization_id', orgId)
       .eq('user_id', userId);
@@ -177,7 +177,7 @@ export class OrganizationService {
 
   async getStats(orgId: number) {
     const { data, error } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .select('is_active')
       .eq('organization_id', orgId);
 
@@ -202,7 +202,7 @@ export class OrganizationService {
 
   async getAllActiveOrganizations() {
     const { data, error } = await this.supabaseService.client
-      .from('organizations')
+      .from('app_organizations')
       .select('*')
       .eq('is_active', true)
       .order('created_at', { ascending: false });
@@ -220,7 +220,7 @@ export class OrganizationService {
   async linkUserToOrganization(userId: number, orgId: number) {
     // Check if user already linked to this organization
     const { data: existingMembership } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .select('*')
       .eq('user_id', userId)
       .eq('organization_id', orgId)
@@ -235,7 +235,7 @@ export class OrganizationService {
 
     // Create new membership (B2B)
     const { data, error } = await this.supabaseService.client
-      .from('memberships')
+      .from('app_memberships')
       .insert({
         user_id: userId,
         organization_id: orgId,

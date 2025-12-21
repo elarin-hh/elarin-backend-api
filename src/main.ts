@@ -18,34 +18,6 @@ async function bootstrap() {
     }),
   );
 
-  // Add hook to handle empty JSON bodies before parsing
-  app.getHttpAdapter().getInstance().addHook('preParsing', async (request: any, reply: any, payload: any) => {
-    if (request.headers['content-type'] === 'application/json') {
-      // Check if payload is empty
-      const chunks: any[] = [];
-      for await (const chunk of payload) {
-        chunks.push(chunk);
-      }
-      const body = Buffer.concat(chunks).toString('utf8');
-
-      // If empty, return a stream with empty object
-      if (body === '') {
-        const { Readable } = require('stream');
-        const readable = new Readable();
-        readable.push('{}');
-        readable.push(null);
-        return readable;
-      }
-
-      // Otherwise, return original payload
-      const { Readable } = require('stream');
-      const readable = new Readable();
-      readable.push(body);
-      readable.push(null);
-      return readable;
-    }
-    return payload;
-  });
 
   const configService = app.get(ConfigService);
   const nodeEnv = configService.get<string>('nodeEnv') || 'development';
@@ -91,6 +63,7 @@ async function bootstrap() {
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
+    exposedHeaders: ['Set-Cookie'],
   });
 
   // Global validation pipe

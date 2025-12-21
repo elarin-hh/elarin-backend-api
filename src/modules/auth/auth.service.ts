@@ -48,7 +48,7 @@ export class AuthService {
 
     // Criar perfil com consentimento e verificação de idade
     const { data: userProfile, error: userError } = await this.supabaseService.client
-      .from('users')
+      .from('app_users')
       .insert({
         auth_uid: authData.user.id,
         email,
@@ -108,7 +108,7 @@ export class AuthService {
 
       // Step 1: Verify organization exists first
       const { data: org, error: orgError } = await this.supabaseService.client
-        .from('organizations')
+        .from('app_organizations')
         .select('id, name, is_active')
         .eq('id', organization_id)
         .single();
@@ -142,7 +142,7 @@ export class AuthService {
 
       // Step 3: Create user profile with LGPD compliance fields
       const { data: userProfile, error: userError } = await this.supabaseService.client
-        .from('users')
+        .from('app_users')
         .insert({
           auth_uid: authUserId,
           email,
@@ -168,7 +168,7 @@ export class AuthService {
 
       // Step 4: Link user to organization (CRITICAL - if this fails, rollback everything)
       const { data: membership, error: membershipError } = await this.supabaseService.client
-        .from('memberships')
+        .from('app_memberships')
         .insert({
           user_id: userProfileId,
           organization_id: organization_id,
@@ -206,7 +206,7 @@ export class AuthService {
       if (userProfileId) {
         try {
           await this.supabaseService.client
-            .from('users')
+            .from('app_users')
             .delete()
             .eq('id', userProfileId);
         } catch (deleteError) {
@@ -289,25 +289,25 @@ export class AuthService {
       // Step 1: Delete all user-related data
       // Delete training metrics
       await this.supabaseService.client
-        .from('metrics')
+        .from('app_training_sessions')
         .delete()
         .eq('user_id', userProfileId);
 
       // Delete exercises
       await this.supabaseService.client
-        .from('exercises')
+        .from('app_user_exercises')
         .delete()
         .eq('user_id', userProfileId);
 
       // Delete memberships
       await this.supabaseService.client
-        .from('memberships')
+        .from('app_memberships')
         .delete()
         .eq('user_id', userProfileId);
 
       // Step 2: Delete user profile
       await this.supabaseService.client
-        .from('users')
+        .from('app_users')
         .delete()
         .eq('id', userProfileId);
 

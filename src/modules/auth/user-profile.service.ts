@@ -33,7 +33,7 @@ export class UserProfileService {
   async getUserProfile(userId: string): Promise<UserProfile | null> {
     try {
       const { data, error} = await this.supabaseService.client
-        .from('users')
+        .from('app_users')
         .select('id, auth_uid, email, full_name, avatar_url, height_cm, weight_kg, birth_date, locale, is_dev, consent_given_at, biometric_consent_given_at, marketing_consent, age_verified')
         .eq('auth_uid', userId)
         .single();
@@ -64,7 +64,7 @@ export class UserProfileService {
   ): Promise<UserProfile | null> {
     try {
       const { data, error } = await this.supabaseService.client
-        .from('users')
+        .from('app_users')
         .insert({
           auth_uid: userId,
           email: email,
@@ -135,7 +135,7 @@ export class UserProfileService {
       }
 
       const { data, error } = await this.supabaseService.client
-        .from('users')
+        .from('app_users')
         .update(updateData)
         .eq('id', userProfile.id)
         .select()
@@ -169,19 +169,19 @@ export class UserProfileService {
 
       // Buscar exercícios do usuário
       const { data: exercises } = await this.supabaseService.client
-        .from('exercises')
+        .from('app_user_exercises')
         .select('*')
         .eq('user_id', userProfileId);
 
       // Buscar métricas de treino
       const { data: metrics } = await this.supabaseService.client
-        .from('metrics')
+        .from('app_training_sessions')
         .select('*')
         .eq('user_id', userProfileId);
 
       // Buscar membros de organizações
       const { data: memberships } = await this.supabaseService.client
-        .from('memberships')
+        .from('app_memberships')
         .select('*, organizations(*)')
         .eq('user_id', userProfileId);
 

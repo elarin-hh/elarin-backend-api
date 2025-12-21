@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { SupabaseService } from '../../common/services/supabase.service';
 import { StaticConfigService } from './static-config.service';
-import { ExerciseWhitelistService } from './exercise-whitelist.service';
 import {
   type ExerciseConfigOverride,
   type MergedExerciseConfig,
@@ -20,21 +19,30 @@ export class ExercisesService {
 
   constructor(
     private readonly supabaseService: SupabaseService,
-    private readonly staticConfigService: StaticConfigService,
-    private readonly whitelistService: ExerciseWhitelistService
+    private readonly staticConfigService: StaticConfigService
   ) { }
 
-  /**
-   * Get all exercises (active and inactive) for a specific user
-   * Filters out exercises whose type is not in the whitelist (default-exercises.json)
-   */
   async getUserExercises(userId: string) {
     const userIdInt = await this.getUserIdFromUuid(userId);
 
     const { data, error } = await this.supabaseService.client
-      .from('exercises')
-      .select('*')
+      .from('app_user_exercises')
+      .select(`
+        id,
+        template_id,
+        is_active,
+        created_at,
+        updated_at,
+        config,
+        app_exercise_templates!inner (
+          type,
+          name,
+          description,
+          image_url
+        )
+      `)
       .eq('user_id', userIdInt)
+      .eq('app_exercise_templates.is_active', true)
       .order('is_active', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -42,19 +50,18 @@ export class ExercisesService {
       throw new InternalServerErrorException('Failed to fetch exercises');
     }
 
-    // Filter exercises based on whitelist
-    const allExercises = data || [];
-    const filteredExercises = await this.whitelistService.filterAllowedExercises(allExercises);
-
-    // Log if any exercises were filtered out
-    const filteredCount = allExercises.length - filteredExercises.length;
-    if (filteredCount > 0) {
-      this.logger.warn(
-        `Filtered out ${filteredCount} exercises not in whitelist for user ${userId}`
-      );
-    }
-
-    return filteredExercises;
+    return (data || []).map((exercise: any) => ({
+      id: exercise.id,
+      template_id: exercise.template_id,
+      type: exercise.app_exercise_templates.type,
+      name: exercise.app_exercise_templates.name,
+      description: exercise.app_exercise_templates.description,
+      image_url: exercise.app_exercise_templates.image_url,
+      is_active: exercise.is_active,
+      created_at: exercise.created_at,
+      updated_at: exercise.updated_at,
+      config: exercise.config
+    }));
   }
 
   /**
@@ -70,7 +77,7 @@ export class ExercisesService {
     // Primeiro busca a config atual para fazer merge (opcional, mas bom para seguranca)
     const { data: currentExercise, error: fetchError } =
       await this.supabaseService.client
-        .from('exercises')
+        .from('app_user_exercises')
         .select('config')
         .eq('id', exerciseId)
         .eq('user_id', userIdInt)
@@ -93,7 +100,7 @@ export class ExercisesService {
     };
 
     const { data, error } = await this.supabaseService.client
-      .from('exercises')
+      .from('app_user_exercises')
       .update({ config: updatedConfig })
       .eq('id', exerciseId)
       .eq('user_id', userIdInt)
@@ -107,38 +114,41 @@ export class ExercisesService {
     return data;
   }
 
-  /**
-   * Get complete exercise configuration (static + database overrides merged)
-   * This is the main method to retrieve configs for training
-   */
-  async getExerciseFullConfig(
-    exerciseId: string,
-    userId: string
-  ): Promise<MergedExerciseConfig> {
+  async getExerciseConfig(exerciseId: string, userId: string): Promise<MergedExerciseConfig> {
     const userIdInt = await this.getUserIdFromUuid(userId);
 
-    // 1. Fetch exercise from database
     const { data: exercise, error } = await this.supabaseService.client
-      .from('exercises')
-      .select('type, config')
+      .from('app_user_exercises')
+      .select(`
+        id,
+        template_id,
+        config,
+        app_exercise_templates!inner (
+          type,
+          name
+        )
+      `)
       .eq('id', exerciseId)
       .eq('user_id', userIdInt)
       .single();
 
     if (error || !exercise) {
-      throw new NotFoundException('Exercise not found');
+      throw new NotFoundException(`Exercise not found`);
     }
 
-    // 2. Load static config for this exercise type
-    const staticConfig = await this.staticConfigService.loadStaticConfig(
-      exercise.type
-    );
+    const exerciseType = (exercise as any).app_exercise_templates.type;
+    const staticConfig = await this.staticConfigService.loadStaticConfig(exerciseType);
 
-    // 3. Merge static config with database overrides
+    if (!staticConfig) {
+      throw new NotFoundException(
+        `No static config found for exercise type: ${exerciseType}`
+      );
+    }
+
     const mergedConfig = this.mergeConfigs(staticConfig, exercise.config || {});
 
     this.logger.debug(
-      `Merged config for exercise ${exerciseId} (type: ${exercise.type})`
+      `Merged config for exercise ${exerciseId} (type: ${exerciseType})`
     );
 
     return mergedConfig;
@@ -228,7 +238,7 @@ export class ExercisesService {
    */
   private async getUserIdFromUuid(userUuid: string): Promise<number> {
     const { data, error } = await this.supabaseService.client
-      .from('users')
+      .from('app_users')
       .select('id')
       .eq('auth_uid', userUuid)
       .single();
