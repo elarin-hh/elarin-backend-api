@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsNumber, IsDateString, IsOptional, IsBoolean } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsNumber, IsDateString, IsOptional, IsBoolean, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RegisterWithOrganizationDto {
@@ -42,4 +42,24 @@ export class RegisterWithOrganizationDto {
   @IsBoolean()
   @IsOptional()
   marketing_consent?: boolean;
+
+  @ApiPropertyOptional({
+    example: 175,
+    description: 'Altura do usuário em centímetros'
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(50, { message: 'Altura deve ser no mínimo 50cm' })
+  @Max(300, { message: 'Altura deve ser no máximo 300cm' })
+  height_cm?: number;
+
+  @ApiPropertyOptional({
+    example: 70.5,
+    description: 'Peso do usuário em quilogramas'
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(20, { message: 'Peso deve ser no mínimo 20kg' })
+  @Max(500, { message: 'Peso deve ser no máximo 500kg' })
+  weight_kg?: number;
 }

@@ -82,8 +82,8 @@ export class AuthService {
     };
   }
 
-  async registerWithOrganization(registerDto: { email: string; password: string; full_name: string; birth_date: string; organization_id: number; locale?: string; marketing_consent?: boolean }) {
-    const { email, password, full_name, birth_date, organization_id, locale, marketing_consent } = registerDto;
+  async registerWithOrganization(registerDto: { email: string; password: string; full_name: string; birth_date: string; organization_id: number; locale?: string; marketing_consent?: boolean; height_cm?: number; weight_kg?: number }) {
+    const { email, password, full_name, birth_date, organization_id, locale, marketing_consent, height_cm, weight_kg } = registerDto;
 
     let authUserId: string | null = null;
     let userProfileId: number | null = null;
@@ -152,6 +152,8 @@ export class AuthService {
           consent_given_at: new Date().toISOString(),
           marketing_consent: marketing_consent || false,
           locale: locale || 'pt-BR',
+          height_cm: height_cm || null,
+          weight_kg: weight_kg || null,
         })
         .select()
         .single();
