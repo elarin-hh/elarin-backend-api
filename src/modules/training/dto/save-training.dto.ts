@@ -31,4 +31,22 @@ export class SaveTrainingDto {
   @Min(0)
   @Max(1)
   avg_confidence?: number;
+
+  @ApiPropertyOptional({ example: 123, description: 'Training plan session ID' })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  plan_session_id?: number;
+
+  @ApiPropertyOptional({ example: 456, description: 'Training plan item ID' })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  plan_item_id?: number;
+
+  @ApiPropertyOptional({ example: 1, description: 'Sequence index inside the plan session' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  sequence_index?: number;
 }

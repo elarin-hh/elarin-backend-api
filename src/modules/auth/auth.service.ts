@@ -293,6 +293,18 @@ export class AuthService {
         .delete()
         .eq('user_id', userProfileId);
 
+      // Delete training plan sessions
+      await this.supabaseService.client
+        .from('app_training_plan_sessions')
+        .delete()
+        .eq('user_id', userProfileId);
+
+      // Delete training plan assignments
+      await this.supabaseService.client
+        .from('app_training_plan_assignments')
+        .delete()
+        .eq('user_id', userProfileId);
+
       // Delete exercises
       await this.supabaseService.client
         .from('app_user_exercises')

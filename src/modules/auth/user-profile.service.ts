@@ -179,6 +179,16 @@ export class UserProfileService {
         .select('*')
         .eq('user_id', userProfileId);
 
+      const { data: planAssignments } = await this.supabaseService.client
+        .from('app_training_plan_assignments')
+        .select('*')
+        .eq('user_id', userProfileId);
+
+      const { data: planSessions } = await this.supabaseService.client
+        .from('app_training_plan_sessions')
+        .select('*')
+        .eq('user_id', userProfileId);
+
       // Buscar membros de organizações
       const { data: memberships } = await this.supabaseService.client
         .from('app_memberships')
@@ -212,6 +222,8 @@ export class UserProfileService {
         },
         exercises: exercises || [],
         training_metrics: metrics || [],
+        training_plan_assignments: planAssignments || [],
+        training_plan_sessions: planSessions || [],
         organization_memberships: memberships || [],
       };
 

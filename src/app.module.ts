@@ -10,6 +10,7 @@ import { SupabaseModule } from './common/services/supabase.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ExercisesModule } from './modules/exercises/exercises.module';
 import { TrainingModule } from './modules/training/training.module';
+import { TrainingPlansModule } from './modules/training-plans/training-plans.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { PlansModule } from './modules/plans/plans.module';
 
@@ -39,6 +40,7 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
     AuthModule,
     ExercisesModule,
     TrainingModule,
+    TrainingPlansModule,
     OrganizationsModule,
     PlansModule,
   ],

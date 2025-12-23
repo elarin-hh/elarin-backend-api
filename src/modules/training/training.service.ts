@@ -55,13 +55,36 @@ export class TrainingService {
     // Verificar se exercício existe
     const { data: exercise, error: exerciseError } = await this.supabaseService.client
       .from('app_user_exercises')
-      .select('*')
-      .eq('type', saveTrainingDto.exercise_type)
+      .select('id, app_exercise_templates!inner ( type )')
+      .eq('user_id', userIdInt)
       .eq('is_active', true)
+      .eq('app_exercise_templates.type', saveTrainingDto.exercise_type)
       .single();
 
     if (exerciseError || !exercise) {
       throw new NotFoundException('Exercise not found');
+    }
+
+    const hasPlanContext =
+      Boolean(saveTrainingDto.plan_session_id) ||
+      Boolean(saveTrainingDto.plan_item_id) ||
+      typeof saveTrainingDto.sequence_index === 'number';
+
+    if (hasPlanContext) {
+      if (
+        !saveTrainingDto.plan_session_id ||
+        !saveTrainingDto.plan_item_id ||
+        typeof saveTrainingDto.sequence_index !== 'number'
+      ) {
+        throw new BadRequestException('Incomplete training plan context');
+      }
+
+      await this.validatePlanContext(
+        userIdInt,
+        saveTrainingDto.plan_session_id,
+        saveTrainingDto.plan_item_id,
+        saveTrainingDto.exercise_type,
+      );
     }
 
     // Obter organization_id (B2B) ou null (B2C)
@@ -78,6 +101,12 @@ export class TrainingService {
         sets: saveTrainingDto.sets_completed || 1,
         duration_ms: (saveTrainingDto.duration_seconds || 0) * 1000,
         valid_ratio: saveTrainingDto.avg_confidence || 0,
+        plan_session_id: saveTrainingDto.plan_session_id || null,
+        plan_item_id: saveTrainingDto.plan_item_id || null,
+        sequence_index:
+          typeof saveTrainingDto.sequence_index === 'number'
+            ? saveTrainingDto.sequence_index
+            : null,
         created_at: new Date().toISOString(),
       })
       .select()
@@ -132,5 +161,68 @@ export class TrainingService {
     }
 
     return data;
+  }
+
+  private async validatePlanContext(
+    userId: number,
+    planSessionId: number,
+    planItemId: number,
+    exerciseType: string,
+  ) {
+    const { data: planSession, error: sessionError } =
+      await this.supabaseService.client
+        .from('app_training_plan_sessions')
+        .select('id, plan_id, user_id, status')
+        .eq('id', planSessionId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    if (sessionError || !planSession) {
+      throw new BadRequestException('Invalid plan session');
+    }
+
+    if (planSession.status !== 'in_progress') {
+      throw new BadRequestException('Plan session is not active');
+    }
+
+    const { data: planItem, error: itemError } =
+      await this.supabaseService.client
+        .from('app_training_plan_items')
+        .select(
+          `
+          id,
+          plan_id,
+          exercise_type,
+          template_id
+        `,
+        )
+        .eq('id', planItemId)
+        .eq('plan_id', planSession.plan_id)
+        .maybeSingle();
+
+    if (itemError || !planItem) {
+      throw new BadRequestException('Invalid plan item');
+    }
+
+    let expectedType = planItem.exercise_type || null;
+
+    if (!expectedType && planItem.template_id) {
+      const { data: template, error: templateError } =
+        await this.supabaseService.client
+          .from('app_exercise_templates')
+          .select('type')
+          .eq('id', planItem.template_id)
+          .maybeSingle();
+
+      if (templateError || !template) {
+        throw new BadRequestException('Invalid plan item template');
+      }
+
+      expectedType = template.type || null;
+    }
+
+    if (expectedType && expectedType !== exerciseType) {
+      throw new BadRequestException('Exercise does not match plan item');
+    }
   }
 }
