@@ -17,7 +17,6 @@ type PlanItemRecord = {
   exercise_template?: {
     type?: string | null;
     name?: string | null;
-    name_pt?: string | null;
   };
 };
 
@@ -25,7 +24,6 @@ type TemplateSummary = {
   id: number;
   type?: string | null;
   name?: string | null;
-  name_pt?: string | null;
 };
 
 const normalizeSingle = <T>(
@@ -69,7 +67,7 @@ export class TrainingPlansService {
           position: item.position,
           template_id: item.template_id,
           exercise_type: item.exercise_type || template?.type || null,
-          exercise_name: template?.name_pt || template?.name || null,
+          exercise_name: template?.name || null,
           target_reps: item.target_reps ?? null,
           target_sets: item.target_sets ?? null,
           target_duration_sec: item.target_duration_sec ?? null,
@@ -115,7 +113,7 @@ export class TrainingPlansService {
       const { data: templates, error: templateError } =
         await this.supabaseService.client
           .from('app_exercise_templates')
-          .select('id, type, name, name_pt')
+          .select('id, type, name')
           .in('id', templateIds);
 
       if (templateError) {
