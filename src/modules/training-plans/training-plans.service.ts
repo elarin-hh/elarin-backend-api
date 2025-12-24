@@ -37,7 +37,7 @@ const normalizeSingle = <T>(
 
 @Injectable()
 export class TrainingPlansService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(private readonly supabaseService: SupabaseService) { }
 
   private async getUserIdFromUuid(userUuid: string): Promise<number> {
     const { data, error } = await this.supabaseService.client
@@ -131,45 +131,52 @@ export class TrainingPlansService {
     return this.mapPlanItems(items, templateMap);
   }
 
-  async getAssignedPlan(userUuid: string) {
+  async getAssignedPlans(userUuid: string) {
     const userIdInt = await this.getUserIdFromUuid(userUuid);
 
-    const { data: assignment, error } = await this.supabaseService.client
+    const { data: assignments, error } = await this.supabaseService.client
       .from('app_training_plan_assignments')
-      .select('id, plan_id')
+      .select(
+        `
+        id,
+        plan_id,
+        plan:app_training_plans (
+          id,
+          name,
+          description,
+          is_active
+        )
+      `,
+      )
       .eq('user_id', userIdInt)
       .eq('is_active', true)
-      .order('assigned_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order('assigned_at', { ascending: false });
 
-    if (error && error.code !== 'PGRST116') {
-      throw new InternalServerErrorException('Failed to fetch assigned plan');
+    if (error) {
+      throw new InternalServerErrorException('Failed to fetch assigned plans');
     }
 
-    if (!assignment) {
-      return null;
-    }
+    const results = await Promise.all(
+      (assignments || []).map(async (a: any) => {
+        const plan = normalizeSingle(a.plan);
 
-    const { data: plan, error: planError } = await this.supabaseService.client
-      .from('app_training_plans')
-      .select('id, name, description, is_active')
-      .eq('id', assignment.plan_id)
-      .maybeSingle();
+        if (!plan || plan.is_active === false) {
+          return null;
+        }
 
-    if (planError || !plan || plan.is_active === false) {
-      return null;
-    }
+        const items = await this.getPlanItems(plan.id);
 
-    const items = await this.getPlanItems(plan.id);
+        return {
+          assignment_id: a.id,
+          plan_id: plan.id,
+          name: plan.name,
+          description: plan.description,
+          items,
+        };
+      }),
+    );
 
-    return {
-      assignment_id: assignment.id,
-      plan_id: plan.id,
-      name: plan.name,
-      description: plan.description,
-      items,
-    };
+    return results.filter((plan) => plan !== null);
   }
 
   async startSession(userUuid: string, planId: number) {

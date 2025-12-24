@@ -40,7 +40,7 @@ const normalizeSingle = <T>(
 
 @Injectable()
 export class OrganizationTrainingPlansService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(private readonly supabaseService: SupabaseService) { }
 
   async getPlans(organizationId: number) {
     const { data: plans, error } = await this.supabaseService.client
@@ -205,6 +205,37 @@ export class OrganizationTrainingPlansService {
     }
 
     return { message: 'Training plan deactivated' };
+  }
+
+  async deletePlan(organizationId: number, planId: number) {
+    await this.getPlanOrThrow(organizationId, planId);
+
+    // Attempt to delete items first
+    const { error: itemsError } = await this.supabaseService.client
+      .from('app_training_plan_items')
+      .delete()
+      .eq('plan_id', planId);
+
+    if (itemsError) {
+      throw new InternalServerErrorException('Failed to remove plan items');
+    }
+
+    const { error } = await this.supabaseService.client
+      .from('app_training_plans')
+      .delete()
+      .eq('id', planId)
+      .eq('organization_id', organizationId);
+
+    if (error) {
+      if (error.code === '23503') {
+        throw new BadRequestException(
+          'Cannot remove plan because it is in use (assigned to users). Please deactivate it instead.',
+        );
+      }
+      throw new InternalServerErrorException('Failed to remove training plan');
+    }
+
+    return { message: 'Training plan removed' };
   }
 
   async addPlanItem(
@@ -418,12 +449,18 @@ export class OrganizationTrainingPlansService {
       throw new BadRequestException('Training plan is inactive');
     }
 
-    await this.supabaseService.client
+    // Check for existing active assignment
+    const { data: existing } = await this.supabaseService.client
       .from('app_training_plan_assignments')
-      .update({ is_active: false, ended_at: new Date().toISOString() })
+      .select('id')
       .eq('user_id', userId)
-      .eq('organization_id', organizationId)
-      .eq('is_active', true);
+      .eq('plan_id', dto.plan_id)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (existing) {
+      throw new BadRequestException('User already has this plan assigned');
+    }
 
     const { data: assignment, error } = await this.supabaseService.client
       .from('app_training_plan_assignments')
@@ -637,5 +674,66 @@ export class OrganizationTrainingPlansService {
         ? templateMap.get(item.template_id) ?? null
         : null,
     }));
+  }
+  async getUserAssignments(organizationId: number, userId: number) {
+    await this.verifyUserInOrganization(organizationId, userId);
+
+    const { data, error } = await this.supabaseService.client
+      .from('app_training_plan_assignments')
+      .select(
+        `
+        id,
+        plan_id,
+        user_id,
+        is_active,
+        assigned_at,
+        plan:app_training_plans (
+          id,
+          name,
+          description,
+          is_active
+        )
+      `,
+      )
+      .eq('user_id', userId)
+      .eq('organization_id', organizationId)
+      .eq('is_active', true)
+      .order('assigned_at', { ascending: false });
+
+    if (error) {
+      throw new InternalServerErrorException('Failed to fetch user assignments');
+    }
+
+    return (data || [])
+      .map((assignment: any) => ({
+        ...assignment,
+        plan: normalizeSingle(assignment.plan),
+      }))
+      .filter(
+        (assignment: any) =>
+          assignment.plan && assignment.plan.is_active !== false,
+      );
+  }
+
+  async removeAssignmentById(
+    organizationId: number,
+    userId: number,
+    planId: number,
+  ) {
+    await this.verifyUserInOrganization(organizationId, userId);
+
+    const { error } = await this.supabaseService.client
+      .from('app_training_plan_assignments')
+      .update({ is_active: false, ended_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('plan_id', planId)
+      .eq('organization_id', organizationId)
+      .eq('is_active', true);
+
+    if (error) {
+      throw new InternalServerErrorException('Failed to remove assignment');
+    }
+
+    return { message: 'Training plan assignment removed' };
   }
 }

@@ -6,13 +6,13 @@ import { TrainingPlansService } from './training-plans.service';
 @ApiBearerAuth()
 @Controller('training-plans')
 export class TrainingPlansController {
-  constructor(private readonly trainingPlansService: TrainingPlansService) {}
+  constructor(private readonly trainingPlansService: TrainingPlansService) { }
 
   @Get('assigned')
-  @ApiOperation({ summary: 'Get active assigned training plan for current user' })
-  @ApiResponse({ status: 200, description: 'Assigned training plan retrieved' })
-  async getAssignedPlan(@Req() req: any) {
-    return this.trainingPlansService.getAssignedPlan(req.user.id);
+  @ApiOperation({ summary: 'Get active assigned training plans for current user' })
+  @ApiResponse({ status: 200, description: 'Assigned training plans retrieved' })
+  async getAssignedPlans(@Req() req: any) {
+    return this.trainingPlansService.getAssignedPlans(req.user.id);
   }
 
   @Post(':planId/start')

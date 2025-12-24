@@ -32,7 +32,7 @@ import { OrganizationTrainingPlansService } from './organization-training-plans.
 export class OrganizationTrainingPlansController {
   constructor(
     private readonly trainingPlansService: OrganizationTrainingPlansService,
-  ) {}
+  ) { }
 
   @Get('training-plans')
   @ApiOperation({ summary: 'List training plans for organization' })
@@ -72,7 +72,7 @@ export class OrganizationTrainingPlansController {
     return this.trainingPlansService.updatePlan(request.organization.id, planId, dto);
   }
 
-  @Delete('training-plans/:planId')
+  @Patch('training-plans/:planId/deactivate')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Deactivate training plan' })
   @ApiParam({ name: 'planId', type: Number })
@@ -81,6 +81,17 @@ export class OrganizationTrainingPlansController {
     @Param('planId', ParseIntPipe) planId: number,
   ) {
     return this.trainingPlansService.deactivatePlan(request.organization.id, planId);
+  }
+
+  @Delete('training-plans/:planId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Remove training plan' })
+  @ApiParam({ name: 'planId', type: Number })
+  async deletePlan(
+    @Req() request: any,
+    @Param('planId', ParseIntPipe) planId: number,
+  ) {
+    return this.trainingPlansService.deletePlan(request.organization.id, planId);
   }
 
   @Post('training-plans/:planId/items')
@@ -129,20 +140,20 @@ export class OrganizationTrainingPlansController {
     );
   }
 
-  @Get('users/:userId/training-plan')
-  @ApiOperation({ summary: 'Get active training plan assignment for user' })
+  @Get('users/:userId/training-plans')
+  @ApiOperation({ summary: 'Get active training plan assignments for user' })
   @ApiParam({ name: 'userId', type: Number })
-  async getUserAssignment(
+  async getUserAssignments(
     @Req() request: any,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
-    return this.trainingPlansService.getUserAssignment(
+    return this.trainingPlansService.getUserAssignments(
       request.organization.id,
       userId,
     );
   }
 
-  @Post('users/:userId/training-plan')
+  @Post('users/:userId/training-plans')
   @ApiOperation({ summary: 'Assign training plan to user' })
   @ApiParam({ name: 'userId', type: Number })
   async assignPlan(
@@ -157,17 +168,20 @@ export class OrganizationTrainingPlansController {
     );
   }
 
-  @Delete('users/:userId/training-plan')
+  @Delete('users/:userId/training-plans/:planId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Remove training plan assignment from user' })
   @ApiParam({ name: 'userId', type: Number })
+  @ApiParam({ name: 'planId', type: Number })
   async removeAssignment(
     @Req() request: any,
     @Param('userId', ParseIntPipe) userId: number,
+    @Param('planId', ParseIntPipe) planId: number,
   ) {
-    return this.trainingPlansService.removeAssignment(
+    return this.trainingPlansService.removeAssignmentById(
       request.organization.id,
       userId,
+      planId,
     );
   }
 }
