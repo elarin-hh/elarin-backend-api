@@ -19,6 +19,8 @@ import { OrganizationAuthGuard } from '../organizations/guards/organization-auth
 import { CurrentOrganization } from '../organizations/decorators/current-organization.decorator';
 import { OrganizationRoute } from '../../common/decorators/organization-route.decorator';
 import { AssignExerciseDto } from './dto/assign-exercise.dto';
+import { UpdateTemplateDefaultConfigDto, UpdateUserExerciseConfigDto } from './dto/update-template-config.dto';
+
 
 @ApiTags('Organization Exercise Management')
 @Controller('organizations')
@@ -32,11 +34,39 @@ export class OrganizationExerciseAdminController {
   ) { }
 
   @Get('exercise-templates')
-  @ApiOperation({ summary: 'List available exercise templates for assignment' })
+  @ApiOperation({ summary: 'List all exercise templates with configurations' })
   @ApiResponse({ status: 200, description: 'List of exercise templates' })
-  async getExerciseTemplates() {
-    return this.exerciseTemplatesService.getActiveTemplates();
+  async getAllExerciseTemplates() {
+    return this.exerciseTemplatesService.getAllTemplates();
   }
+
+  @Get('exercise-templates/:templateId')
+  @ApiOperation({ summary: 'Get single exercise template with full configuration' })
+  @ApiParam({ name: 'templateId', description: 'Template ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Exercise template details' })
+  @ApiResponse({ status: 404, description: 'Template not found' })
+  async getExerciseTemplate(
+    @Param('templateId', ParseIntPipe) templateId: number,
+  ) {
+    return this.exerciseTemplatesService.getTemplateById(templateId);
+  }
+
+  // DISABLED: Template configs are read-only and cannot be edited by users
+  // @Patch('exercise-templates/:templateId/default-config')
+  // @ApiOperation({ summary: 'Update default configuration for an exercise template' })
+  // @ApiParam({ name: 'templateId', description: 'Template ID', type: Number })
+  // @ApiResponse({ status: 200, description: 'Default config updated successfully' })
+  // @ApiResponse({ status: 404, description: 'Template not found' })
+  // async updateTemplateDefaultConfig(
+  //   @Param('templateId', ParseIntPipe) templateId: number,
+  //   @Body() updateDto: UpdateTemplateDefaultConfigDto,
+  // ) {
+  //   return this.organizationExerciseAdminService.updateTemplateDefaultConfig(
+  //     templateId,
+  //     updateDto.default_config,
+  //   );
+  // }
+
 
   @Get('users/:userId/exercises')
   @ApiOperation({ summary: "Get a user's assigned exercises (admin view)" })
@@ -106,18 +136,18 @@ export class OrganizationExerciseAdminController {
   }
 
   @Patch('users/:userId/exercises/:exerciseId/config')
-  @ApiOperation({ summary: 'Update exercise configuration' })
+  @ApiOperation({ summary: 'Update user-specific exercise configuration overrides' })
   async updateExerciseConfig(
     @Req() request: any,
     @Param('userId', ParseIntPipe) userId: number,
     @Param('exerciseId', ParseIntPipe) exerciseId: number,
-    @Body() body: { config: Record<string, any> },
+    @Body() updateDto: UpdateUserExerciseConfigDto,
   ) {
     return this.organizationExerciseAdminService.updateUserExerciseConfig(
       request.organization.id,
       userId,
       exerciseId,
-      body.config,
+      updateDto.config,
     );
   }
 }

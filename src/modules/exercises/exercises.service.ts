@@ -114,7 +114,11 @@ export class ExercisesService {
     return data;
   }
 
-  async getExerciseConfig(exerciseId: string, userId: string): Promise<MergedExerciseConfig> {
+  /**
+   * Get full exercise configuration with merged template + user overrides
+   * Updated to load from database instead of static files
+   */
+  async getExerciseConfig(exerciseId: string, userId: string): Promise<any> {
     const userIdInt = await this.getUserIdFromUuid(userId);
 
     const { data: exercise, error } = await this.supabaseService.client
@@ -125,7 +129,9 @@ export class ExercisesService {
         config,
         app_exercise_templates!inner (
           type,
-          name
+          name,
+          fixed_config,
+          default_config
         )
       `)
       .eq('id', exerciseId)
@@ -137,25 +143,149 @@ export class ExercisesService {
     }
 
     const exerciseType = (exercise as any).app_exercise_templates.type;
-    const staticConfig = await this.staticConfigService.loadStaticConfig(exerciseType);
+    const template = (exercise as any).app_exercise_templates;
 
-    if (!staticConfig) {
+    // Database-only: if no configs in DB, throw error
+    if (!template.fixed_config && !template.default_config) {
       throw new NotFoundException(
-        `No static config found for exercise type: ${exerciseType}`
+        `No configuration found for exercise type: ${exerciseType}. Please populate database with exercise templates.`
       );
     }
 
-    const mergedConfig = this.mergeConfigs(staticConfig, exercise.config || {});
+    const mergedConfig = this.mergeConfigsFromDB(
+      template.fixed_config || {},
+      template.default_config || {},
+      exercise.config || {}
+    );
 
     this.logger.debug(
       `Merged config for exercise ${exerciseId} (type: ${exerciseType})`
     );
 
-    return mergedConfig;
+    return {
+      exerciseName: template.name,
+      ...mergedConfig
+    };
   }
 
   /**
-   * Merge static configuration with database overrides
+   * Get exercise configuration by template type (for B2C)
+   * Finds user's exercise by template type and returns merged config
+   */
+  async getExerciseConfigByType(exerciseType: string, userId: string): Promise<any> {
+    const userIdInt = await this.getUserIdFromUuid(userId);
+
+    // Find user's exercise for this template type
+    const { data: exercise, error } = await this.supabaseService.client
+      .from('app_user_exercises')
+      .select(`
+        id,
+        template_id,
+        config,
+        app_exercise_templates!inner (
+          type,
+          name,
+          fixed_config,
+          default_config
+        )
+      `)
+      .eq('user_id', userIdInt)
+      .eq('app_exercise_templates.type', exerciseType)
+      .single();
+
+    if (error || !exercise) {
+      // If user doesn't have this exercise assigned, return template defaults only
+      const { data: template, error: templateError } = await this.supabaseService.client
+        .from('app_exercise_templates')
+        .select('type, name, fixed_config, default_config')
+        .eq('type', exerciseType)
+        .single();
+
+      if (templateError || !template) {
+        throw new NotFoundException(`Exercise template not found: ${exerciseType}`);
+      }
+
+      if (!template.fixed_config && !template.default_config) {
+        throw new NotFoundException(
+          `No configuration found for exercise type: ${exerciseType}. Please populate database with exercise templates.`
+        );
+      }
+
+      const mergedConfig = this.mergeConfigsFromDB(
+        template.fixed_config || {},
+        template.default_config || {},
+        {} // no user overrides
+      );
+
+      return {
+        exerciseName: template.name,
+        ...mergedConfig
+      };
+    }
+
+    const template = (exercise as any).app_exercise_templates;
+
+    if (!template.fixed_config && !template.default_config) {
+      throw new NotFoundException(
+        `No configuration found for exercise type: ${exerciseType}. Please populate database with exercise templates.`
+      );
+    }
+
+    const mergedConfig = this.mergeConfigsFromDB(
+      template.fixed_config || {},
+      template.default_config || {},
+      exercise.config || {}
+    );
+
+    this.logger.debug(
+      `Merged config for exercise type ${exerciseType} (user: ${userIdInt})`
+    );
+
+    return {
+      exerciseName: template.name,
+      ...mergedConfig
+    };
+  }
+
+  /**
+   * Merge database configurations: fixed + default + user overrides
+   * Fixed fields are NEVER overridden by user config
+   */
+  private mergeConfigsFromDB(
+    fixedConfig: Record<string, any>,
+    defaultConfig: Record<string, any>,
+    userConfig: Record<string, any>
+  ): any {
+    // Deep merge helper
+    const deepMerge = (target: any, source: any) => {
+      const result = { ...target };
+      for (const key in source) {
+        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+          result[key] = deepMerge(result[key] || {}, source[key]);
+        } else {
+          result[key] = source[key];
+        }
+      }
+      return result;
+    };
+
+    // 1. Start with fixed config
+    let merged = { ...fixedConfig };
+
+    // 2. Apply default config
+    merged = deepMerge(merged, defaultConfig);
+
+    // 3. Apply user overrides
+    merged = deepMerge(merged, userConfig);
+
+    // 4. Re-apply fixed to ensure it wins
+    merged = deepMerge(merged, fixedConfig);
+
+    return merged;
+  }
+
+  /**
+   * Merge static configuration with database overrides (DEPRECATED - keeping for fallback)
    * Fixed fields are NEVER overridden, only variable fields are merged
    */
   private mergeConfigs(

@@ -42,4 +42,18 @@ export class ExercisesController {
   ) {
     return this.exercisesService.updateExerciseConfig(id, req.user.id, body.config);
   }
+
+  /**
+   * Get exercise config by template type (for B2C compatibility)
+   * B2C works with template types ("bodyweight_squat") not user_exercise IDs
+   */
+  @Get('by-type/:type/config')
+  @ApiOperation({ summary: 'Get exercise configuration by template type' })
+  @ApiParam({ name: 'type', description: 'Exercise template type (e.g. bodyweight_squat)', type: String })
+  async getExerciseConfigByType(
+    @Param('type') exerciseType: string,
+    @Req() req: any
+  ) {
+    return this.exercisesService.getExerciseConfigByType(exerciseType, req.user.id);
+  }
 }

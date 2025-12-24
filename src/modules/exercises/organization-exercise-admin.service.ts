@@ -265,6 +265,40 @@ export class OrganizationExerciseAdminService {
   }
 
   /**
+   * Update template default configuration (organization-wide defaults)
+   * Only default_config can be modified, fixed_config is immutable
+   */
+  async updateTemplateDefaultConfig(
+    templateId: number,
+    newDefaultConfig: Record<string, any>,
+  ) {
+    // 1. Verify template exists
+    const template = await this.exerciseTemplatesService.getTemplateById(templateId);
+    if (!template) {
+      throw new NotFoundException('Exercise template not found');
+    }
+
+    // 2. Update only default_config (fixed_config remains untouched)
+    const { data, error } = await this.supabaseService.client
+      .from('app_exercise_templates')
+      .update({
+        default_config: newDefaultConfig,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', templateId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Update Template Default Config Error:', error);
+      throw new InternalServerErrorException('Failed to update template default config: ' + error.message);
+    }
+
+    return data;
+  }
+
+
+  /**
    * Verify user belongs to organization
    * @throws ForbiddenException if user does not belong to organization
    */
