@@ -19,21 +19,9 @@ export class AddTrainingPlanItemDto {
   @Min(0)
   target_reps?: number;
 
-  @ApiPropertyOptional({ example: 3 })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  target_sets?: number;
-
   @ApiPropertyOptional({ example: 60 })
   @IsOptional()
   @IsInt()
   @Min(0)
   target_duration_sec?: number;
-
-  @ApiPropertyOptional({ example: 30 })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  rest_seconds?: number;
 }

@@ -14,21 +14,9 @@ export class UpdateTrainingPlanItemDto {
   @Min(0)
   target_reps?: number;
 
-  @ApiPropertyOptional({ example: 4 })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  target_sets?: number;
-
   @ApiPropertyOptional({ example: 90 })
   @IsOptional()
   @IsInt()
   @Min(0)
   target_duration_sec?: number;
-
-  @ApiPropertyOptional({ example: 45 })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  rest_seconds?: number;
 }

@@ -11,9 +11,7 @@ type PlanItemRecord = {
   template_id: number | null;
   exercise_type: string | null;
   target_reps?: number | null;
-  target_sets?: number | null;
   target_duration_sec?: number | null;
-  rest_seconds?: number | null;
   exercise_template?: {
     type?: string | null;
     name?: string | null;
@@ -69,9 +67,7 @@ export class TrainingPlansService {
           exercise_type: item.exercise_type || template?.type || null,
           exercise_name: template?.name || null,
           target_reps: item.target_reps ?? null,
-          target_sets: item.target_sets ?? null,
           target_duration_sec: item.target_duration_sec ?? null,
-          rest_seconds: item.rest_seconds ?? null,
         };
       })
       .sort((a, b) => a.position - b.position);
@@ -87,9 +83,7 @@ export class TrainingPlansService {
         template_id,
         exercise_type,
         target_reps,
-        target_sets,
-        target_duration_sec,
-        rest_seconds
+        target_duration_sec
       `,
       )
       .eq('plan_id', planId)

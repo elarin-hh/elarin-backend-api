@@ -139,9 +139,7 @@ export class OrganizationTrainingPlansService {
         template_id,
         exercise_type,
         target_reps,
-        target_sets,
-        target_duration_sec,
-        rest_seconds
+        target_duration_sec
       `,
       )
       .eq('plan_id', planId)
@@ -271,9 +269,7 @@ export class OrganizationTrainingPlansService {
         exercise_type: template.type,
         position,
         target_reps: dto.target_reps ?? null,
-        target_sets: dto.target_sets ?? null,
         target_duration_sec: dto.target_duration_sec ?? null,
-        rest_seconds: dto.rest_seconds ?? null,
       })
       .select(
         `
@@ -282,9 +278,7 @@ export class OrganizationTrainingPlansService {
         template_id,
         exercise_type,
         target_reps,
-        target_sets,
-        target_duration_sec,
-        rest_seconds
+        target_duration_sec
       `,
       )
       .single();
@@ -310,11 +304,9 @@ export class OrganizationTrainingPlansService {
     const payload: Record<string, unknown> = {};
     if (dto.position !== undefined) payload.position = dto.position;
     if (dto.target_reps !== undefined) payload.target_reps = dto.target_reps;
-    if (dto.target_sets !== undefined) payload.target_sets = dto.target_sets;
     if (dto.target_duration_sec !== undefined) {
       payload.target_duration_sec = dto.target_duration_sec;
     }
-    if (dto.rest_seconds !== undefined) payload.rest_seconds = dto.rest_seconds;
 
     if (Object.keys(payload).length === 0) {
       const { data: existingItem } = await this.supabaseService.client
@@ -326,9 +318,7 @@ export class OrganizationTrainingPlansService {
           template_id,
           exercise_type,
           target_reps,
-          target_sets,
-          target_duration_sec,
-          rest_seconds
+          target_duration_sec
         `,
         )
         .eq('id', itemId)
@@ -360,9 +350,7 @@ export class OrganizationTrainingPlansService {
         template_id,
         exercise_type,
         target_reps,
-        target_sets,
-        target_duration_sec,
-        rest_seconds
+        target_duration_sec
       `,
       )
       .single();
