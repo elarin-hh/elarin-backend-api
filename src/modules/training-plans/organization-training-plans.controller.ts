@@ -19,6 +19,7 @@ import {
   AddTrainingPlanItemDto,
   AssignTrainingPlanDto,
   CreateTrainingPlanDto,
+  ReorderTrainingPlanItemsDto,
   UpdateTrainingPlanDto,
   UpdateTrainingPlanItemDto,
 } from './dto';
@@ -103,6 +104,22 @@ export class OrganizationTrainingPlansController {
     @Body() dto: AddTrainingPlanItemDto,
   ) {
     return this.trainingPlansService.addPlanItem(request.organization.id, planId, dto);
+  }
+
+  @Patch('training-plans/:planId/items/reorder')
+  @ApiOperation({ summary: 'Reorder training plan items' })
+  @ApiParam({ name: 'planId', type: Number })
+  @ApiResponse({ status: 200, description: 'Items reordered successfully' })
+  async reorderItems(
+    @Req() request: any,
+    @Param('planId', ParseIntPipe) planId: number,
+    @Body() dto: ReorderTrainingPlanItemsDto,
+  ) {
+    return this.trainingPlansService.reorderItems(
+      request.organization.id,
+      planId,
+      dto.item_ids,
+    );
   }
 
   @Patch('training-plans/:planId/items/:itemId')

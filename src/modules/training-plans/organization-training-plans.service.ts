@@ -369,6 +369,45 @@ export class OrganizationTrainingPlansService {
     };
   }
 
+  async reorderItems(
+    organizationId: number,
+    planId: number,
+    itemIds: number[],
+  ) {
+    await this.getPlanOrThrow(organizationId, planId);
+
+    // Verify all items belong to the plan
+    const { data: existingItems, error: fetchError } =
+      await this.supabaseService.client
+        .from('app_training_plan_items')
+        .select('id')
+        .eq('plan_id', planId);
+
+    if (fetchError || !existingItems) {
+      throw new InternalServerErrorException('Failed to fetch plan items');
+    }
+
+    const existingIds = new Set(existingItems.map((i) => i.id));
+    const allValid = itemIds.every((id) => existingIds.has(id));
+
+    if (!allValid || itemIds.length !== existingIds.size) {
+      throw new BadRequestException(
+        'Invalid item IDs provided. Ensure all items belong to this plan and are included.',
+      );
+    }
+
+    const updates = itemIds.map((id, index) =>
+      this.supabaseService.client
+        .from('app_training_plan_items')
+        .update({ position: index + 1 })
+        .eq('id', id),
+    );
+
+    await Promise.all(updates);
+
+    return this.getPlan(organizationId, planId);
+  }
+
   async removePlanItem(organizationId: number, planId: number, itemId: number) {
     await this.getPlanOrThrow(organizationId, planId);
 
