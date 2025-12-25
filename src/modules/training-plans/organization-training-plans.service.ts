@@ -411,6 +411,20 @@ export class OrganizationTrainingPlansService {
   async removePlanItem(organizationId: number, planId: number, itemId: number) {
     await this.getPlanOrThrow(organizationId, planId);
 
+    // Get item to be removed to know its position
+    const { data: itemToRemove, error: fetchError } =
+      await this.supabaseService.client
+        .from('app_training_plan_items')
+        .select('position')
+        .eq('id', itemId)
+        .eq('plan_id', planId)
+        .single();
+
+    if (fetchError || !itemToRemove) {
+      throw new NotFoundException('Plan item not found');
+    }
+
+    // Delete the item
     const { error } = await this.supabaseService.client
       .from('app_training_plan_items')
       .delete()
@@ -419,6 +433,31 @@ export class OrganizationTrainingPlansService {
 
     if (error) {
       throw new InternalServerErrorException('Failed to remove plan item');
+    }
+
+    // Shift positions of subsequent items
+    // This uses an RPC call or raw query ideally, but here we can do a bulk update logic
+    // or just assume we trust the client or subsequent loaded state.
+    // However, to keep it clean in DB, let's decrement position for all items > deleted position
+
+    // Note: Supabase JS client doesn't support raw SQL easily for "update ... set positions = position - 1"
+    // without an RPC. Alternatively, we fetch and update.
+    // Given the small number of items per plan, fetch-update is acceptable.
+
+    const { data: subsequentItems } = await this.supabaseService.client
+      .from('app_training_plan_items')
+      .select('id, position')
+      .eq('plan_id', planId)
+      .gt('position', itemToRemove.position);
+
+    if (subsequentItems && subsequentItems.length > 0) {
+      const updates = subsequentItems.map((item) =>
+        this.supabaseService.client
+          .from('app_training_plan_items')
+          .update({ position: item.position - 1 })
+          .eq('id', item.id),
+      );
+      await Promise.all(updates);
     }
 
     return { message: 'Plan item removed' };
