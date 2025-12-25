@@ -8,27 +8,12 @@ export class AuthService {
   constructor(
     private readonly supabaseService: SupabaseService,
     private readonly userProfileService: UserProfileService,
-  ) {}
+  ) { }
 
   async register(registerDto: RegisterDto) {
-    const { email, password, full_name, birth_date, locale, marketing_consent } = registerDto;
+    const { email, password, full_name, birth_date, marketing_consent, height_cm, weight_kg } = registerDto;
 
-    // VALIDAR IDADE MÍNIMA (13 anos - LGPD Art. 14, §1º + ECA Lei 8.069/1990)
-    const birthDateObj = new Date(birth_date);
-    const today = new Date();
-    const age = today.getFullYear() - birthDateObj.getFullYear();
-    const monthDiff = today.getMonth() - birthDateObj.getMonth();
 
-    const actualAge = (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDateObj.getDate()))
-      ? age - 1
-      : age;
-
-    if (actualAge < 13) {
-      throw new BadRequestException(
-        'Você deve ter pelo menos 13 anos para criar uma conta. ' +
-        'Conforme Lei nº 13.709/2018 (LGPD) Art. 14, §1º e Lei nº 8.069/1990 (ECA).'
-      );
-    }
 
     const { data: authData, error } = await this.supabaseService.client.auth.signUp({
       email,
@@ -46,7 +31,7 @@ export class AuthService {
       throw new BadRequestException('Auth user not created');
     }
 
-    // Criar perfil com consentimento e verificação de idade
+
     const { data: userProfile, error: userError } = await this.supabaseService.client
       .from('app_users')
       .insert({
@@ -55,21 +40,21 @@ export class AuthService {
         full_name,
         birth_date,
         age_verified: true,
-        consent_given_at: new Date().toISOString(), // Consentimento geral (Termos + Privacidade)
+        consent_given_at: new Date().toISOString(),
         marketing_consent: marketing_consent || false,
-        locale: locale || 'pt-BR',
+        height_cm,
+        weight_kg,
       })
       .select()
       .single();
 
     if (userError) {
-      // Rollback: deletar usuário do Auth
+
       await this.supabaseService.client.auth.admin.deleteUser(authData.user.id);
       throw new BadRequestException(userError.message);
     }
 
-    // REMOVED: Auto-seed exercises
-    // Exercises are now manually assigned by organization admins
+
 
     return {
       user: {
@@ -82,31 +67,16 @@ export class AuthService {
     };
   }
 
-  async registerWithOrganization(registerDto: { email: string; password: string; full_name: string; birth_date: string; organization_id: number; locale?: string; marketing_consent?: boolean; height_cm?: number; weight_kg?: number }) {
-    const { email, password, full_name, birth_date, organization_id, locale, marketing_consent, height_cm, weight_kg } = registerDto;
+  async registerWithOrganization(registerDto: { email: string; password: string; full_name: string; birth_date: string; organization_id: number; marketing_consent?: boolean; height_cm: number; weight_kg: number }) {
+    const { email, password, full_name, birth_date, organization_id, marketing_consent, height_cm, weight_kg } = registerDto;
 
     let authUserId: string | null = null;
     let userProfileId: number | null = null;
 
     try {
-      // VALIDAR IDADE MÍNIMA (13 anos - LGPD Art. 14, §1º + ECA Lei 8.069/1990)
-      const birthDateObj = new Date(birth_date);
-      const today = new Date();
-      const age = today.getFullYear() - birthDateObj.getFullYear();
-      const monthDiff = today.getMonth() - birthDateObj.getMonth();
 
-      const actualAge = (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDateObj.getDate()))
-        ? age - 1
-        : age;
 
-      if (actualAge < 13) {
-        throw new BadRequestException(
-          'Você deve ter pelo menos 13 anos para criar uma conta. ' +
-          'Conforme Lei nº 13.709/2018 (LGPD) Art. 14, §1º e Lei nº 8.069/1990 (ECA).'
-        );
-      }
 
-      // Step 1: Verify organization exists first
       const { data: org, error: orgError } = await this.supabaseService.client
         .from('app_organizations')
         .select('id, name, is_active')
@@ -121,7 +91,7 @@ export class AuthService {
         throw new BadRequestException('Organization is not active');
       }
 
-      // Step 2: Register user
+
       const { data: authData, error } = await this.supabaseService.client.auth.signUp({
         email,
         password,
@@ -140,7 +110,7 @@ export class AuthService {
 
       authUserId = authData.user.id;
 
-      // Step 3: Create user profile with LGPD compliance fields
+
       const { data: userProfile, error: userError } = await this.supabaseService.client
         .from('app_users')
         .insert({
@@ -151,9 +121,8 @@ export class AuthService {
           age_verified: true,
           consent_given_at: new Date().toISOString(),
           marketing_consent: marketing_consent || false,
-          locale: locale || 'pt-BR',
-          height_cm: height_cm || null,
-          weight_kg: weight_kg || null,
+          height_cm,
+          weight_kg,
         })
         .select()
         .single();
@@ -168,7 +137,7 @@ export class AuthService {
 
       userProfileId = userProfile.id;
 
-      // Step 4: Link user to organization (CRITICAL - if this fails, rollback everything)
+
       const { data: membership, error: membershipError } = await this.supabaseService.client
         .from('app_memberships')
         .insert({
@@ -185,10 +154,9 @@ export class AuthService {
         throw new Error(`Failed to link user to organization: ${membershipError.message || 'Unknown error'}`);
       }
 
-      // Step 5: REMOVED - Auto-seed exercises
-      // Exercises are now manually assigned by organization admins
 
-      // Success! Return user data
+
+
       if (!userProfileId) {
         throw new BadRequestException('User profile ID is missing');
       }
@@ -204,7 +172,7 @@ export class AuthService {
       };
 
     } catch (error) {
-      // ROLLBACK: Delete created records if something failed
+
       if (userProfileId) {
         try {
           await this.supabaseService.client
@@ -212,7 +180,7 @@ export class AuthService {
             .delete()
             .eq('id', userProfileId);
         } catch (deleteError) {
-          // Silently fail rollback
+
         }
       }
 
@@ -220,7 +188,7 @@ export class AuthService {
         try {
           await this.supabaseService.client.auth.admin.deleteUser(authUserId);
         } catch (deleteError) {
-          // Silently fail rollback
+
         }
       }
 
@@ -279,7 +247,7 @@ export class AuthService {
 
   async deleteAccount(authUserId: string) {
     try {
-      // Get user profile to get the numeric ID
+
       const userProfile = await this.userProfileService.getUserProfile(authUserId);
 
       if (!userProfile) {
@@ -288,44 +256,43 @@ export class AuthService {
 
       const userProfileId = userProfile.id;
 
-      // Step 1: Delete all user-related data
-      // Delete training metrics
+
       await this.supabaseService.client
         .from('app_training_sessions')
         .delete()
         .eq('user_id', userProfileId);
 
-      // Delete training plan sessions
+
       await this.supabaseService.client
         .from('app_training_plan_sessions')
         .delete()
         .eq('user_id', userProfileId);
 
-      // Delete training plan assignments
+
       await this.supabaseService.client
         .from('app_training_plan_assignments')
         .delete()
         .eq('user_id', userProfileId);
 
-      // Delete exercises
+
       await this.supabaseService.client
         .from('app_user_exercises')
         .delete()
         .eq('user_id', userProfileId);
 
-      // Delete memberships
+
       await this.supabaseService.client
         .from('app_memberships')
         .delete()
         .eq('user_id', userProfileId);
 
-      // Step 2: Delete user profile
+
       await this.supabaseService.client
         .from('app_users')
         .delete()
         .eq('id', userProfileId);
 
-      // Step 3: Delete auth user
+
       const { error: authDeleteError } = await this.supabaseService.client.auth.admin.deleteUser(authUserId);
 
       if (authDeleteError) {

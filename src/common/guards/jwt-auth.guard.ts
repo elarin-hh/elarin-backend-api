@@ -21,7 +21,6 @@ export class JwtAuthGuard implements CanActivate {
       return true;
     }
 
-    // Check if route is for organization (uses OrganizationAuthGuard instead)
     const isOrganizationRoute = this.reflector.getAllAndOverride<boolean>(IS_ORGANIZATION_ROUTE_KEY, [
       context.getHandler(),
       context.getClass(),

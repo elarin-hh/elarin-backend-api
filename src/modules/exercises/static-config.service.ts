@@ -3,21 +3,12 @@ import { join } from 'path';
 import { readFile } from 'fs/promises';
 import type { ExerciseConfig } from './schemas/config-schema';
 
-/**
- * Service to load and cache static exercise configurations
- * Static configs are stored in /static/exercises/{exerciseType}/config.json
- */
 @Injectable()
 export class StaticConfigService {
     private readonly logger = new Logger(StaticConfigService.name);
     private readonly configCache = new Map<string, ExerciseConfig>();
 
-    /**
-     * Base path to static exercise configs
-     * Adjust this path based on your project structure
-     */
     private getConfigPath(exerciseType: string): string {
-        // Assuming static configs are in project root under static/exercises/
         return join(
             process.cwd(),
             'static',
@@ -27,12 +18,7 @@ export class StaticConfigService {
         );
     }
 
-    /**
-     * Load static configuration for an exercise type
-     * Results are cached for performance
-     */
     async loadStaticConfig(exerciseType: string): Promise<ExerciseConfig> {
-        // Check cache first
         if (this.configCache.has(exerciseType)) {
             return this.configCache.get(exerciseType)!;
         }
@@ -44,10 +30,8 @@ export class StaticConfigService {
             const configData = await readFile(configPath, 'utf-8');
             const config: ExerciseConfig = JSON.parse(configData);
 
-            // Validate config structure
             this.validateConfig(config, exerciseType);
 
-            // Cache the config
             this.configCache.set(exerciseType, config);
 
             this.logger.log(`Loaded static config for exercise: ${exerciseType}`);
@@ -64,9 +48,6 @@ export class StaticConfigService {
         }
     }
 
-    /**
-     * Validate that the loaded config has required structure
-     */
     private validateConfig(config: any, exerciseType: string): void {
         if (!config._fixed) {
             throw new Error(
@@ -80,7 +61,6 @@ export class StaticConfigService {
             );
         }
 
-        // Validate required fixed fields
         const requiredFixedFields = [
             'feedbackCooldownMs',
             'analysisInterval',
@@ -97,7 +77,6 @@ export class StaticConfigService {
             }
         }
 
-        // Validate required defaults fields
         if (!config._defaults.heuristicConfig) {
             throw new Error(
                 `Invalid config for ${exerciseType}: _defaults.heuristicConfig is required`
@@ -105,17 +84,11 @@ export class StaticConfigService {
         }
     }
 
-    /**
-     * Clear the cache (useful for testing or hot-reload scenarios)
-     */
     clearCache(): void {
         this.configCache.clear();
         this.logger.log('Static config cache cleared');
     }
 
-    /**
-     * Get all cached exercise types
-     */
     getCachedTypes(): string[] {
         return Array.from(this.configCache.keys());
     }

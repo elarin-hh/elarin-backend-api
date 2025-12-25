@@ -14,7 +14,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly userProfileService: UserProfileService,
-  ) {}
+  ) { }
 
   @Public()
   @Post('register')
@@ -90,7 +90,6 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Update user consent (LGPD Art. 8º)',
-    description: 'Atualizar consentimentos: general (Termos+Privacidade), biometric (Dados Biométricos), marketing'
   })
   @ApiResponse({ status: 200, description: 'Consent updated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -106,7 +105,6 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Export user data (LGPD Art. 18, V - Portabilidade)',
-    description: 'Exportar todos os dados pessoais e de treino em formato JSON estruturado'
   })
   @ApiResponse({ status: 200, description: 'User data exported successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -122,7 +120,7 @@ export class AuthController {
     const access = session.access_token;
     const refresh = session.refresh_token;
     const accessMaxAge = session.expires_in ? Number(session.expires_in) : 3600;
-    const refreshMaxAge = 60 * 60 * 24 * 7; // 7 days
+    const refreshMaxAge = 60 * 60 * 24 * 7;
 
     const cookieBase = `Path=/; HttpOnly; SameSite=Lax${isProd ? '; Secure' : ''}`;
 

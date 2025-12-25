@@ -8,7 +8,6 @@ import fastifyCookie, { FastifyCookieOptions } from '@fastify/cookie';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  // Create app with Fastify adapter
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({
@@ -17,7 +16,6 @@ async function bootstrap() {
       },
     }),
   );
-
 
   const configService = app.get(ConfigService);
   const nodeEnv = configService.get<string>('nodeEnv') || 'development';
@@ -37,15 +35,12 @@ async function bootstrap() {
     },
   });
 
-  // Security
   await app.register(helmet as any, {
     contentSecurityPolicy: false,
   });
 
-  // CORS - Allow requests from local network
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests from tools (no origin) and local dev
       const isLocal =
         !origin ||
         origin.includes('localhost') ||
@@ -66,7 +61,6 @@ async function bootstrap() {
     exposedHeaders: ['Set-Cookie'],
   });
 
-  // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -80,7 +74,6 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('Elarin API')
     .setDescription('AI-powered fitness trainer API built with NestJS + Fastify')

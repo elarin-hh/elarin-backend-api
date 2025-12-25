@@ -27,13 +27,7 @@ export class RegisterWithOrganizationDto {
   @IsNumber()
   organization_id: number;
 
-  @ApiPropertyOptional({
-    example: 'pt-BR',
-    description: 'Idioma preferido do usuário'
-  })
-  @IsString()
-  @IsOptional()
-  locale?: string;
+
 
   @ApiPropertyOptional({
     example: false,
@@ -43,23 +37,21 @@ export class RegisterWithOrganizationDto {
   @IsOptional()
   marketing_consent?: boolean;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: 175,
     description: 'Altura do usuário em centímetros'
   })
   @IsNumber()
-  @IsOptional()
   @Min(50, { message: 'Altura deve ser no mínimo 50cm' })
   @Max(300, { message: 'Altura deve ser no máximo 300cm' })
-  height_cm?: number;
+  height_cm: number;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: 70.5,
     description: 'Peso do usuário em quilogramas'
   })
   @IsNumber()
-  @IsOptional()
   @Min(20, { message: 'Peso deve ser no mínimo 20kg' })
   @Max(500, { message: 'Peso deve ser no máximo 500kg' })
-  weight_kg?: number;
+  weight_kg: number;
 }

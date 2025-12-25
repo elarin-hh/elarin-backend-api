@@ -11,8 +11,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { ExercisesService } from './exercises.service';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'; // Assuming JwtAuthGuard is the correct one based on @UseGuards
-import { CurrentUser } from '../../common/decorators/current-user.decorator'; // Keeping this import as it was in the original, though not used in the provided new methods
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Exercises')
 @Controller('exercises')
@@ -43,10 +43,6 @@ export class ExercisesController {
     return this.exercisesService.updateExerciseConfig(id, req.user.id, body.config);
   }
 
-  /**
-   * Get exercise config by template type (for B2C compatibility)
-   * B2C works with template types ("bodyweight_squat") not user_exercise IDs
-   */
   @Get('by-type/:type/config')
   @ApiOperation({ summary: 'Get exercise configuration by template type' })
   @ApiParam({ name: 'type', description: 'Exercise template type (e.g. bodyweight_squat)', type: String })

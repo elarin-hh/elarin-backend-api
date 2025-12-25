@@ -208,7 +208,6 @@ export class OrganizationTrainingPlansService {
   async deletePlan(organizationId: number, planId: number) {
     await this.getPlanOrThrow(organizationId, planId);
 
-    // Attempt to delete items first
     const { error: itemsError } = await this.supabaseService.client
       .from('app_training_plan_items')
       .delete()
@@ -376,7 +375,6 @@ export class OrganizationTrainingPlansService {
   ) {
     await this.getPlanOrThrow(organizationId, planId);
 
-    // Verify all items belong to the plan
     const { data: existingItems, error: fetchError } =
       await this.supabaseService.client
         .from('app_training_plan_items')
@@ -411,7 +409,6 @@ export class OrganizationTrainingPlansService {
   async removePlanItem(organizationId: number, planId: number, itemId: number) {
     await this.getPlanOrThrow(organizationId, planId);
 
-    // Get item to be removed to know its position
     const { data: itemToRemove, error: fetchError } =
       await this.supabaseService.client
         .from('app_training_plan_items')
@@ -424,7 +421,6 @@ export class OrganizationTrainingPlansService {
       throw new NotFoundException('Plan item not found');
     }
 
-    // Delete the item
     const { error } = await this.supabaseService.client
       .from('app_training_plan_items')
       .delete()
@@ -435,14 +431,7 @@ export class OrganizationTrainingPlansService {
       throw new InternalServerErrorException('Failed to remove plan item');
     }
 
-    // Shift positions of subsequent items
-    // This uses an RPC call or raw query ideally, but here we can do a bulk update logic
-    // or just assume we trust the client or subsequent loaded state.
-    // However, to keep it clean in DB, let's decrement position for all items > deleted position
 
-    // Note: Supabase JS client doesn't support raw SQL easily for "update ... set positions = position - 1"
-    // without an RPC. Alternatively, we fetch and update.
-    // Given the small number of items per plan, fetch-update is acceptable.
 
     const { data: subsequentItems } = await this.supabaseService.client
       .from('app_training_plan_items')
@@ -515,7 +504,6 @@ export class OrganizationTrainingPlansService {
       throw new BadRequestException('Training plan is inactive');
     }
 
-    // Check for existing active assignment
     const { data: existing } = await this.supabaseService.client
       .from('app_training_plan_assignments')
       .select('id')

@@ -16,25 +16,18 @@ export class OrganizationExerciseAdminService {
     private readonly exerciseTemplatesService: ExerciseTemplatesService,
   ) { }
 
-  /**
-   * Assign exercise from template to user
-   */
   async assignExerciseToUser(
     organizationId: number,
     targetUserId: number,
     templateId: number,
   ): Promise<any> {
-    // 1. Verify target user belongs to organization
     await this.verifyUserInOrganization(organizationId, targetUserId);
 
-    // 2. Validate template exists and is active
     const template = await this.exerciseTemplatesService.getTemplateById(templateId);
     if (!template || !template.is_active) {
       throw new BadRequestException('Invalid or inactive exercise template');
     }
 
-    // 3. Check if user already has this exercise type
-    // MANUAL JOIN CHECK: Fetch exercises and verify type in code
     const { data: userExercises } = await this.supabaseService.client
       .from('app_user_exercises')
       .select('id, template_id')
@@ -44,13 +37,11 @@ export class OrganizationExerciseAdminService {
       const templateIds = userExercises.map((e: any) => e.template_id).filter(Boolean);
 
       if (templateIds.length > 0) {
-        // Fetch types of existing exercises
         const { data: userTemplates } = await this.supabaseService.client
           .from('app_exercise_templates')
           .select('id, type')
           .in('id', templateIds);
 
-        // Check for type collision
         const hasType = userTemplates?.some((t: any) => t.type === template.type);
         if (hasType) {
           throw new ConflictException('User already has this exercise type');
@@ -58,7 +49,6 @@ export class OrganizationExerciseAdminService {
       }
     }
 
-    // 4. Create exercise record
     const { data, error } = await this.supabaseService.client
       .from('app_user_exercises')
       .insert({
@@ -75,7 +65,6 @@ export class OrganizationExerciseAdminService {
       throw new InternalServerErrorException('Failed to assign exercise: ' + error.message);
     }
 
-    // Merge template data for response
     return {
       ...data,
       type: template.type,
@@ -83,18 +72,13 @@ export class OrganizationExerciseAdminService {
     };
   }
 
-  /**
-   * Remove exercise from user
-   */
   async removeExerciseFromUser(
     organizationId: number,
     targetUserId: number,
     exerciseId: number,
   ): Promise<void> {
-    // 1. Verify target user belongs to organization
     await this.verifyUserInOrganization(organizationId, targetUserId);
 
-    // 2. Verify exercise belongs to user
     const { data: exercise } = await this.supabaseService.client
       .from('app_user_exercises')
       .select('id, user_id')
@@ -106,7 +90,6 @@ export class OrganizationExerciseAdminService {
       throw new NotFoundException('Exercise not found or does not belong to user');
     }
 
-    // 3. Delete exercise
     const { error } = await this.supabaseService.client
       .from('app_user_exercises')
       .delete()
@@ -118,17 +101,12 @@ export class OrganizationExerciseAdminService {
     }
   }
 
-  /**
-   * List user's exercises (admin view)
-   */
   async getUserExercises(
     organizationId: number,
     targetUserId: number,
   ): Promise<any[]> {
-    // 1. Verify target user belongs to organization
     await this.verifyUserInOrganization(organizationId, targetUserId);
 
-    // 2. Fetch user's exercises (RAW)
     const { data: exercises, error } = await this.supabaseService.client
       .from('app_user_exercises')
       .select('*')
@@ -144,7 +122,6 @@ export class OrganizationExerciseAdminService {
       return [];
     }
 
-    // 3. Fetch related templates (MANUAL JOIN)
     const templateIds = exercises.map((e: any) => e.template_id).filter(Boolean);
     const uniqueTemplateIds = [...new Set(templateIds)];
 
@@ -163,7 +140,6 @@ export class OrganizationExerciseAdminService {
       }
     }
 
-    // 4. Merge data
     return exercises.map((ex: any) => {
       const template = templatesMap[ex.template_id];
       return {
@@ -179,9 +155,6 @@ export class OrganizationExerciseAdminService {
     });
   }
 
-  /**
-   * Get exercise full configuration (Fixed + Default + User Overrides)
-   */
   async getExerciseFullConfig(
     organizationId: number,
     userId: number,
@@ -218,9 +191,6 @@ export class OrganizationExerciseAdminService {
     };
   }
 
-  /**
-   * Update user exercise info/config
-   */
   async updateUserExerciseConfig(
     organizationId: number,
     userId: number,
@@ -229,7 +199,6 @@ export class OrganizationExerciseAdminService {
   ) {
     await this.verifyUserInOrganization(organizationId, userId);
 
-    // 1. Get exercise and template to validate keys
     const { data: exercise } = await this.supabaseService.client
       .from('app_user_exercises')
       .select(`
@@ -246,10 +215,6 @@ export class OrganizationExerciseAdminService {
       throw new NotFoundException('Exercise not found');
     }
 
-    // 2. Validate that keys in newConfig exist in default_config (Partial validation)
-    // We allow saving whatever for now, but in strict mode we should filter.
-    // Ideally we merge with existing config.
-
     const { data, error } = await this.supabaseService.client
       .from('app_user_exercises')
       .update({ config: newConfig })
@@ -264,21 +229,15 @@ export class OrganizationExerciseAdminService {
     return data;
   }
 
-  /**
-   * Update template default configuration (organization-wide defaults)
-   * Only default_config can be modified, fixed_config is immutable
-   */
   async updateTemplateDefaultConfig(
     templateId: number,
     newDefaultConfig: Record<string, any>,
   ) {
-    // 1. Verify template exists
     const template = await this.exerciseTemplatesService.getTemplateById(templateId);
     if (!template) {
       throw new NotFoundException('Exercise template not found');
     }
 
-    // 2. Update only default_config (fixed_config remains untouched)
     const { data, error } = await this.supabaseService.client
       .from('app_exercise_templates')
       .update({
@@ -298,10 +257,6 @@ export class OrganizationExerciseAdminService {
   }
 
 
-  /**
-   * Verify user belongs to organization
-   * @throws ForbiddenException if user does not belong to organization
-   */
   private async verifyUserInOrganization(
     organizationId: number,
     userId: number,

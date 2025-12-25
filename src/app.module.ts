@@ -5,7 +5,6 @@ import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import envConfig from './config/env.config';
 import { AppController } from './app.controller';
 
-// Modules
 import { SupabaseModule } from './common/services/supabase.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ExercisesModule } from './modules/exercises/exercises.module';
@@ -14,29 +13,24 @@ import { TrainingPlansModule } from './modules/training-plans/training-plans.mod
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { PlansModule } from './modules/plans/plans.module';
 
-// Guards and Filters
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 @Module({
   imports: [
-    // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
       load: [envConfig],
       envFilePath: '.env',
     }),
 
-    // Rate limiting
     ThrottlerModule.forRoot([{
-      ttl: 60000, // 1 minute
+      ttl: 60000,
       limit: 100,
     }]),
 
-    // Global modules
     SupabaseModule,
 
-    // Feature modules
     AuthModule,
     ExercisesModule,
     TrainingModule,
@@ -45,12 +39,10 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
     PlansModule,
   ],
   providers: [
-    // Global guards
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
-    // Global filters
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,

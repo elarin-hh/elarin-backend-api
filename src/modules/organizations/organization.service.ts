@@ -218,7 +218,6 @@ export class OrganizationService {
   }
 
   async linkUserToOrganization(userId: number, orgId: number) {
-    // Check if user already linked to this organization
     const { data: existingMembership } = await this.supabaseService.client
       .from('app_memberships')
       .select('*')
@@ -233,7 +232,6 @@ export class OrganizationService {
       };
     }
 
-    // Create new membership (B2B)
     const { data, error } = await this.supabaseService.client
       .from('app_memberships')
       .insert({

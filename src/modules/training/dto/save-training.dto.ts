@@ -1,10 +1,6 @@
 import { IsString, IsNumber, IsInt, Min, Max, IsOptional, IsPositive } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-/**
- * DTO para salvar resultado completo de treino
- * Substitui CreateSessionDto e CompleteSessionDto
- */
 export class SaveTrainingDto {
   @ApiProperty({ example: 'squat', description: 'Exercise type identifier' })
   @IsString()

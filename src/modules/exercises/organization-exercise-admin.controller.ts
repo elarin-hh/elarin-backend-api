@@ -16,10 +16,9 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@ne
 import { OrganizationExerciseAdminService } from './organization-exercise-admin.service';
 import { ExerciseTemplatesService } from './exercise-templates.service';
 import { OrganizationAuthGuard } from '../organizations/guards/organization-auth.guard';
-import { CurrentOrganization } from '../organizations/decorators/current-organization.decorator';
 import { OrganizationRoute } from '../../common/decorators/organization-route.decorator';
 import { AssignExerciseDto } from './dto/assign-exercise.dto';
-import { UpdateTemplateDefaultConfigDto, UpdateUserExerciseConfigDto } from './dto/update-template-config.dto';
+import { UpdateUserExerciseConfigDto } from './dto/update-template-config.dto';
 
 
 @ApiTags('Organization Exercise Management')
@@ -50,23 +49,6 @@ export class OrganizationExerciseAdminController {
   ) {
     return this.exerciseTemplatesService.getTemplateById(templateId);
   }
-
-  // DISABLED: Template configs are read-only and cannot be edited by users
-  // @Patch('exercise-templates/:templateId/default-config')
-  // @ApiOperation({ summary: 'Update default configuration for an exercise template' })
-  // @ApiParam({ name: 'templateId', description: 'Template ID', type: Number })
-  // @ApiResponse({ status: 200, description: 'Default config updated successfully' })
-  // @ApiResponse({ status: 404, description: 'Template not found' })
-  // async updateTemplateDefaultConfig(
-  //   @Param('templateId', ParseIntPipe) templateId: number,
-  //   @Body() updateDto: UpdateTemplateDefaultConfigDto,
-  // ) {
-  //   return this.organizationExerciseAdminService.updateTemplateDefaultConfig(
-  //     templateId,
-  //     updateDto.default_config,
-  //   );
-  // }
-
 
   @Get('users/:userId/exercises')
   @ApiOperation({ summary: "Get a user's assigned exercises (admin view)" })
@@ -108,12 +90,11 @@ export class OrganizationExerciseAdminController {
   @ApiResponse({ status: 200, description: 'Exercise removed successfully' })
   @ApiResponse({ status: 403, description: 'User not in organization' })
   @ApiResponse({ status: 404, description: 'Exercise not found' })
-  async removeExerciseFromUser( // Renamed method
+  async removeExerciseFromUser(
     @Req() request: any,
     @Param('userId', ParseIntPipe) userId: number,
     @Param('exerciseId', ParseIntPipe) exerciseId: number,
   ) {
-    // Modified to return the service call directly as per instruction's code edit
     return this.organizationExerciseAdminService.removeExerciseFromUser(
       request.organization.id,
       userId,
