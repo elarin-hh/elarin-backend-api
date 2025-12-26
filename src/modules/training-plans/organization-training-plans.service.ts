@@ -19,7 +19,7 @@ type TemplateRecord = {
   type: string;
   name?: string | null;
   is_active?: boolean | null;
-  default_config?: Record<string, unknown> | null;
+  config?: Record<string, unknown> | null;
 };
 
 type TemplateSummary = {
@@ -589,7 +589,7 @@ export class OrganizationTrainingPlansService {
     const { data: templates, error: templateError } =
       await this.supabaseService.client
         .from('app_exercise_templates')
-        .select('id, type, is_active, default_config')
+        .select('id, type, is_active, config')
         .in('id', templateIds);
 
     if (templateError) {
@@ -623,7 +623,7 @@ export class OrganizationTrainingPlansService {
       user_id: userId,
       template_id: template.id,
       is_active: true,
-      config: template.default_config || {},
+      config: {},
     }));
 
     const { error: insertError } = await this.supabaseService.client
@@ -669,7 +669,7 @@ export class OrganizationTrainingPlansService {
   private async getTemplate(templateId: number): Promise<TemplateRecord> {
     const { data, error } = await this.supabaseService.client
       .from('app_exercise_templates')
-      .select('id, type, name, is_active, default_config')
+      .select('id, type, name, is_active, config')
       .eq('id', templateId)
       .single();
 

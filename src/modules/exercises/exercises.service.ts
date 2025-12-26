@@ -1,9 +1,6 @@
 import { Injectable, NotFoundException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { SupabaseService } from '../../common/services/supabase.service';
-import { StaticConfigService } from './static-config.service';
 import {
-  type ExerciseConfigOverride,
-  type MergedExerciseConfig,
   type ExerciseMetric,
   validateOverride
 } from './schemas/config-schema';
@@ -18,8 +15,7 @@ export class ExercisesService {
   private readonly logger = new Logger(ExercisesService.name);
 
   constructor(
-    private readonly supabaseService: SupabaseService,
-    private readonly staticConfigService: StaticConfigService
+    private readonly supabaseService: SupabaseService
   ) { }
 
   async getUserExercises(userId: string) {
@@ -121,8 +117,8 @@ export class ExercisesService {
         app_exercise_templates!inner (
           type,
           name,
-          fixed_config,
-          default_config
+          config,
+          editable_fields
         )
       `)
       .eq('id', exerciseId)
@@ -133,28 +129,26 @@ export class ExercisesService {
       throw new NotFoundException(`Exercise not found`);
     }
 
-    const exerciseType = (exercise as any).app_exercise_templates.type;
     const template = (exercise as any).app_exercise_templates;
 
-    if (!template.fixed_config && !template.default_config) {
+    if (!template.config) {
       throw new NotFoundException(
-        `No configuration found for exercise type: ${exerciseType}. Please populate database with exercise templates.`
+        `No configuration found for exercise type: ${template.type}. Please populate database with exercise templates.`
       );
     }
 
-    const mergedConfig = this.mergeConfigsFromDB(
-      template.fixed_config || {},
-      template.default_config || {},
-      exercise.config || {}
-    );
+    // Merge: template.config + user overrides (exercise.config)
+    const mergedConfig = this.mergeConfigs(template.config, exercise.config || {});
 
     this.logger.debug(
-      `Merged config for exercise ${exerciseId} (type: ${exerciseType})`
+      `Merged config for exercise ${exerciseId} (type: ${template.type})`
     );
 
     return {
-      exerciseName: template.name,
-      ...mergedConfig
+      exercise_name: template.name,
+      config: mergedConfig,
+      editable_fields: template.editable_fields || [],
+      user_config: exercise.config || {}
     };
   }
 
@@ -170,8 +164,8 @@ export class ExercisesService {
         app_exercise_templates!inner (
           type,
           name,
-          fixed_config,
-          default_config
+          config,
+          editable_fields
         )
       `)
       .eq('user_id', userIdInt)
@@ -179,9 +173,10 @@ export class ExercisesService {
       .single();
 
     if (error || !exercise) {
+      // No user_exercise record - return template config only
       const { data: template, error: templateError } = await this.supabaseService.client
         .from('app_exercise_templates')
-        .select('type, name, fixed_config, default_config')
+        .select('type, name, config, editable_fields')
         .eq('type', exerciseType)
         .single();
 
@@ -189,37 +184,28 @@ export class ExercisesService {
         throw new NotFoundException(`Exercise template not found: ${exerciseType}`);
       }
 
-      if (!template.fixed_config && !template.default_config) {
+      if (!template.config) {
         throw new NotFoundException(
-          `No configuration found for exercise type: ${exerciseType}. Please populate database with exercise templates.`
+          `No configuration found for exercise type: ${exerciseType}. Please populate database.`
         );
       }
 
-      const mergedConfig = this.mergeConfigsFromDB(
-        template.fixed_config || {},
-        template.default_config || {},
-        {}
-      );
-
       return {
         exerciseName: template.name,
-        ...mergedConfig
+        ...template.config
       };
     }
 
     const template = (exercise as any).app_exercise_templates;
 
-    if (!template.fixed_config && !template.default_config) {
+    if (!template.config) {
       throw new NotFoundException(
-        `No configuration found for exercise type: ${exerciseType}. Please populate database with exercise templates.`
+        `No configuration found for exercise type: ${exerciseType}.`
       );
     }
 
-    const mergedConfig = this.mergeConfigsFromDB(
-      template.fixed_config || {},
-      template.default_config || {},
-      exercise.config || {}
-    );
+    // Simple merge: template.config + user overrides
+    const mergedConfig = this.mergeConfigs(template.config, exercise.config || {});
 
     this.logger.debug(
       `Merged config for exercise type ${exerciseType} (user: ${userIdInt})`
@@ -231,68 +217,29 @@ export class ExercisesService {
     };
   }
 
-  private mergeConfigsFromDB(
-    fixedConfig: Record<string, any>,
-    defaultConfig: Record<string, any>,
+  /**
+   * Simple deep merge of two objects
+   * Template config is base, user config overrides
+   */
+  private mergeConfigs(
+    templateConfig: Record<string, any>,
     userConfig: Record<string, any>
-  ): any {
-    const deepMerge = (target: any, source: any) => {
+  ): Record<string, any> {
+    const deepMerge = (target: any, source: any): any => {
+      if (!source || typeof source !== 'object') return target;
+
       const result = { ...target };
       for (const key in source) {
         if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
           result[key] = deepMerge(result[key] || {}, source[key]);
-        } else {
+        } else if (source[key] !== undefined) {
           result[key] = source[key];
         }
       }
       return result;
     };
 
-    let merged = { ...fixedConfig };
-
-    merged = deepMerge(merged, defaultConfig);
-
-    merged = deepMerge(merged, userConfig);
-
-    merged = deepMerge(merged, fixedConfig);
-
-    return merged;
-  }
-
-  private mergeConfigs(
-    staticConfig: any,
-    dbOverrides: ExerciseConfigOverride
-  ): MergedExerciseConfig {
-    const fixed = staticConfig._fixed;
-    const defaults = staticConfig._defaults;
-
-    const heuristicConfig = {
-      ...(fixed.heuristicConfig || {}),
-      ...defaults.heuristicConfig,
-      ...(dbOverrides.heuristicConfig || {}),
-      ...(fixed.heuristicConfig || {})
-    };
-
-    const metrics = this.mergeMetrics(
-      defaults.metrics || [],
-      dbOverrides.metrics || []
-    );
-
-    return {
-      exerciseName: staticConfig.exerciseName,
-      modelPath: staticConfig.modelPath,
-
-      feedbackCooldownMs: fixed.feedbackCooldownMs,
-      analysisInterval: fixed.analysisInterval,
-      mlConfig: fixed.mlConfig,
-      feedbackConfig: fixed.feedbackConfig,
-      components: fixed.components,
-
-      heuristicConfig,
-      metrics,
-
-      completion: staticConfig.completion
-    };
+    return deepMerge(templateConfig, userConfig);
   }
 
   private mergeMetrics(

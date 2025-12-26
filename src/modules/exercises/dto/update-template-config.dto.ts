@@ -1,9 +1,9 @@
 import { IsObject, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UpdateTemplateDefaultConfigDto {
+export class UpdateTemplateConfigDto {
   @ApiProperty({
-    description: 'New default configuration (will replace existing default_config)',
+    description: 'New template configuration (will replace existing config)',
     example: {
       heuristicConfig: {
         minConfidence: 0.7,
@@ -18,7 +18,7 @@ export class UpdateTemplateDefaultConfigDto {
   })
   @IsObject()
   @IsNotEmpty()
-  default_config: Record<string, any>;
+  config: Record<string, any>;
 }
 
 export class UpdateUserExerciseConfigDto {

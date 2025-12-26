@@ -55,7 +55,7 @@ export class OrganizationExerciseAdminService {
         user_id: targetUserId,
         template_id: templateId,
         is_active: template.is_active,
-        config: template.default_config || {}
+        config: {}
       })
       .select()
       .single();
@@ -170,8 +170,8 @@ export class OrganizationExerciseAdminService {
           id,
           type,
           name,
-          fixed_config,
-          default_config
+          config,
+          editable_fields
         )
       `)
       .eq('id', exerciseId)
@@ -185,9 +185,9 @@ export class OrganizationExerciseAdminService {
     return {
       exercise_id: exercise.id,
       exercise_name: exercise.template.name,
-      fixed_config: exercise.template.fixed_config,
-      default_config: exercise.template.default_config,
-      user_config: exercise.config || null,
+      config: exercise.template.config || {},
+      editable_fields: exercise.template.editable_fields || [],
+      user_config: exercise.config || {},
     };
   }
 
@@ -204,7 +204,8 @@ export class OrganizationExerciseAdminService {
       .select(`
         *,
         template:app_exercise_templates (
-          default_config
+          config,
+          editable_fields
         )
       `)
       .eq('id', exerciseId)
@@ -229,9 +230,9 @@ export class OrganizationExerciseAdminService {
     return data;
   }
 
-  async updateTemplateDefaultConfig(
+  async updateTemplateConfig(
     templateId: number,
-    newDefaultConfig: Record<string, any>,
+    newConfig: Record<string, any>,
   ) {
     const template = await this.exerciseTemplatesService.getTemplateById(templateId);
     if (!template) {
@@ -241,7 +242,7 @@ export class OrganizationExerciseAdminService {
     const { data, error } = await this.supabaseService.client
       .from('app_exercise_templates')
       .update({
-        default_config: newDefaultConfig,
+        config: newConfig,
         updated_at: new Date().toISOString()
       })
       .eq('id', templateId)
@@ -249,8 +250,8 @@ export class OrganizationExerciseAdminService {
       .single();
 
     if (error) {
-      console.error('Update Template Default Config Error:', error);
-      throw new InternalServerErrorException('Failed to update template default config: ' + error.message);
+      console.error('Update Template Config Error:', error);
+      throw new InternalServerErrorException('Failed to update template config: ' + error.message);
     }
 
     return data;
