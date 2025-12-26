@@ -56,13 +56,9 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Clear auth cookies' })
-  async logout(@Res() reply: FastifyReply) {
-    try {
-      this.clearAuthCookies(reply);
-    } catch (error) {
-      console.error('Falha ao limpar cookies de autenticação', error);
-    }
-    return reply.status(HttpStatus.OK).send({ success: true });
+  async logout(@Res({ passthrough: true }) reply: FastifyReply) {
+    this.clearAuthCookies(reply);
+    return { success: true };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -142,22 +138,8 @@ export class AuthController {
   }
 
   private clearAuthCookies(reply: FastifyReply) {
-    const isProd = process.env.NODE_ENV === 'production';
-    const options = {
-      path: '/',
-      httpOnly: true,
-      sameSite: 'lax' as const,
-      secure: isProd,
-    };
-
-    if (typeof (reply as any).clearCookie === 'function') {
-      (reply as any).clearCookie('access_token', options);
-      (reply as any).clearCookie('refresh_token', options);
-      return;
-    }
-
     const base = 'Path=/; HttpOnly; SameSite=Lax; Max-Age=0';
-    const secure = isProd ? '; Secure' : '';
+    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
     reply.header('Set-Cookie', [
       `access_token=; ${base}${secure}`,
       `refresh_token=; ${base}${secure}`,
