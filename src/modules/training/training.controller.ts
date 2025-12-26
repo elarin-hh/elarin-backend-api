@@ -16,7 +16,7 @@ export class TrainingController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Save completed training session' })
   @ApiResponse({ status: 201, description: 'Training saved successfully' })
-  @ApiResponse({ status: 404, description: 'Exercise not found' })
+  @ApiResponse({ status: 404, description: 'Exercício não encontrado' })
   async saveTraining(
     @CurrentUser('id') userId: string,
     @Body() saveTrainingDto: SaveTrainingDto,
@@ -41,7 +41,7 @@ export class TrainingController {
   @ApiOperation({ summary: 'Get training details' })
   @ApiParam({ name: 'id', description: 'Training metric ID', type: Number })
   @ApiResponse({ status: 200, description: 'Training details retrieved' })
-  @ApiResponse({ status: 404, description: 'Training not found' })
+  @ApiResponse({ status: 404, description: 'Treino não encontrado' })
   async getTrainingDetails(
     @CurrentUser('id') userId: string,
     @Param('id') metricId: number,

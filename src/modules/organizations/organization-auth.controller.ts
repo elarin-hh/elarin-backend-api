@@ -15,8 +15,8 @@ export class OrganizationAuthController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register new organization' })
   @ApiResponse({ status: 201, description: 'Organization registered successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 409, description: 'Email already registered' })
+  @ApiResponse({ status: 400, description: 'Dados de entrada inválidos' })
+  @ApiResponse({ status: 409, description: 'Email já cadastrado' })
   async register(@Body() registerOrganizationDto: RegisterOrganizationDto, @Res({ passthrough: true }) reply: FastifyReply) {
     const result = await this.organizationAuthService.register(registerOrganizationDto);
     this.setAuthCookies(reply, result.session);
@@ -28,7 +28,7 @@ export class OrganizationAuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Organization login' })
   @ApiResponse({ status: 200, description: 'Login successful' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({ status: 401, description: 'Credenciais inválidas' })
   async login(@Body() loginOrganizationDto: LoginOrganizationDto, @Res({ passthrough: true }) reply: FastifyReply) {
     const result = await this.organizationAuthService.login(loginOrganizationDto);
     this.setAuthCookies(reply, result.session);

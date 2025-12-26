@@ -23,7 +23,7 @@ export class OrganizationAuthService {
       .single();
 
     if (existing) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException('Email já cadastrado');
     }
 
     const { data: authData, error: authError } = await this.supabaseService.client.auth.signUp({
@@ -38,7 +38,7 @@ export class OrganizationAuthService {
     });
 
     if (authError || !authData.user) {
-      throw new BadRequestException(authError?.message || 'Failed to create auth user');
+      throw new BadRequestException('Falha ao criar usuário de autenticação');
     }
 
     let code = organizationData.code;
@@ -76,7 +76,7 @@ export class OrganizationAuthService {
 
     if (error) {
       await this.supabaseService.client.auth.admin.deleteUser(authData.user.id);
-      throw new BadRequestException(error.message);
+      throw new BadRequestException('Falha ao criar organização');
     }
 
     return {
@@ -94,7 +94,7 @@ export class OrganizationAuthService {
     });
 
     if (authError || !authData.user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
     const { data: organization, error } = await this.supabaseService.client
@@ -105,7 +105,7 @@ export class OrganizationAuthService {
       .single();
 
     if (error || !organization) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
     return {
@@ -115,14 +115,14 @@ export class OrganizationAuthService {
   }
 
   async logout() {
-    return { message: 'Logout successful' };
+    return { message: 'Logout realizado com sucesso' };
   }
 
   async verifyToken(token: string) {
     const { data: { user }, error } = await this.supabaseService.client.auth.getUser(token);
 
     if (error || !user) {
-      throw new UnauthorizedException('Invalid token');
+      throw new UnauthorizedException('Token inválido');
     }
 
     const { data: organization } = await this.supabaseService.client
@@ -133,7 +133,7 @@ export class OrganizationAuthService {
       .single();
 
     if (!organization) {
-      throw new UnauthorizedException('Invalid token');
+      throw new UnauthorizedException('Token inválido');
     }
 
     return this.sanitizeOrganization(organization);
@@ -147,7 +147,7 @@ export class OrganizationAuthService {
       .single();
 
     if (error || !organization) {
-      throw new UnauthorizedException('Invalid token');
+      throw new UnauthorizedException('Token inválido');
     }
 
     return this.sanitizeOrganization(organization);

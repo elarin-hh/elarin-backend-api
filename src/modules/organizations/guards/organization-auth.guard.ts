@@ -28,7 +28,7 @@ export class OrganizationAuthGuard implements CanActivate {
     const token = this.extractToken(request);
 
     if (!token) {
-      throw new UnauthorizedException('Token not provided');
+      throw new UnauthorizedException('Token não informado');
     }
 
     try {
@@ -36,7 +36,7 @@ export class OrganizationAuthGuard implements CanActivate {
       request.organization = organization;
       return true;
     } catch (error) {
-      throw new UnauthorizedException('Invalid token');
+      throw new UnauthorizedException('Token inválido');
     }
   }
 

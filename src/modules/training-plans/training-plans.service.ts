@@ -45,7 +45,7 @@ export class TrainingPlansService {
       .single();
 
     if (error || !data) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Usuário não encontrado');
     }
 
     return data.id;
@@ -90,7 +90,7 @@ export class TrainingPlansService {
       .order('position', { ascending: true });
 
     if (error) {
-      throw new InternalServerErrorException('Failed to fetch plan items');
+      throw new InternalServerErrorException('Falha ao buscar itens do plano');
     }
 
     const items = (data as PlanItemRecord[]) || [];
@@ -112,7 +112,7 @@ export class TrainingPlansService {
 
       if (templateError) {
         throw new InternalServerErrorException(
-          'Failed to fetch plan templates',
+          'Falha ao buscar templates do plano',
         );
       }
 
@@ -147,7 +147,7 @@ export class TrainingPlansService {
       .order('assigned_at', { ascending: false });
 
     if (error) {
-      throw new InternalServerErrorException('Failed to fetch assigned plans');
+      throw new InternalServerErrorException('Falha ao buscar planos atribuídos');
     }
 
     const results = await Promise.all(
@@ -186,11 +186,11 @@ export class TrainingPlansService {
         .maybeSingle();
 
     if (assignmentError) {
-      throw new InternalServerErrorException('Failed to fetch assignment');
+      throw new InternalServerErrorException('Falha ao buscar atribuição');
     }
 
     if (!assignment) {
-      throw new NotFoundException('Assigned plan not found');
+      throw new NotFoundException('Plano atribuído não encontrado');
     }
 
     const { data: plan, error: planError } = await this.supabaseService.client
@@ -200,7 +200,7 @@ export class TrainingPlansService {
       .maybeSingle();
 
     if (planError || !plan || plan.is_active === false) {
-      throw new NotFoundException('Assigned plan not found');
+      throw new NotFoundException('Plano atribuído não encontrado');
     }
 
     const { data: existingSession, error: existingError } =
@@ -214,7 +214,7 @@ export class TrainingPlansService {
 
     if (existingError) {
       throw new InternalServerErrorException(
-        'Failed to fetch existing plan session',
+        'Falha ao buscar sessão existente do plano',
       );
     }
 
@@ -245,7 +245,7 @@ export class TrainingPlansService {
         .single();
 
     if (sessionError) {
-      throw new InternalServerErrorException('Failed to create plan session');
+      throw new InternalServerErrorException('Falha ao criar sessão do plano');
     }
 
     return {
@@ -270,15 +270,15 @@ export class TrainingPlansService {
         .maybeSingle();
 
     if (fetchError) {
-      throw new InternalServerErrorException('Failed to fetch plan session');
+      throw new InternalServerErrorException('Falha ao buscar sessão do plano');
     }
 
     if (!session) {
-      throw new NotFoundException('Plan session not found');
+      throw new NotFoundException('Sessão do plano não encontrada');
     }
 
     if (session.status === 'completed') {
-      return { message: 'Plan session already completed' };
+      return { message: 'Sessão do plano já concluída' };
     }
 
     const { error: updateError } = await this.supabaseService.client
@@ -290,9 +290,9 @@ export class TrainingPlansService {
       .eq('id', sessionId);
 
     if (updateError) {
-      throw new InternalServerErrorException('Failed to finish plan session');
+      throw new InternalServerErrorException('Falha ao finalizar sessão do plano');
     }
 
-    return { message: 'Plan session completed' };
+    return { message: 'Sessão do plano concluída' };
   }
 }

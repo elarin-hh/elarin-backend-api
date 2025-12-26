@@ -43,7 +43,7 @@ export class OrganizationExerciseAdminController {
   @ApiOperation({ summary: 'Get single exercise template with full configuration' })
   @ApiParam({ name: 'templateId', description: 'Template ID', type: Number })
   @ApiResponse({ status: 200, description: 'Exercise template details' })
-  @ApiResponse({ status: 404, description: 'Template not found' })
+  @ApiResponse({ status: 404, description: 'Template não encontrado' })
   async getExerciseTemplate(
     @Param('templateId', ParseIntPipe) templateId: number,
   ) {
@@ -54,7 +54,7 @@ export class OrganizationExerciseAdminController {
   @ApiOperation({ summary: "Get a user's assigned exercises (admin view)" })
   @ApiParam({ name: 'userId', description: 'User ID', type: Number })
   @ApiResponse({ status: 200, description: "User's exercises retrieved" })
-  @ApiResponse({ status: 403, description: 'User not in organization' })
+  @ApiResponse({ status: 403, description: 'Usuário não pertence à organização' })
   async getUserExercises(
     @Req() request: any,
     @Param('userId', ParseIntPipe) userId: number,
@@ -67,9 +67,9 @@ export class OrganizationExerciseAdminController {
   @ApiOperation({ summary: 'Assign exercise to user from template' })
   @ApiParam({ name: 'userId', description: 'User ID', type: Number })
   @ApiResponse({ status: 201, description: 'Exercise assigned successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid or inactive template' })
-  @ApiResponse({ status: 403, description: 'User not in organization' })
-  @ApiResponse({ status: 409, description: 'User already has this exercise type' })
+  @ApiResponse({ status: 400, description: 'Template inválido ou inativo' })
+  @ApiResponse({ status: 403, description: 'Usuário não pertence à organização' })
+  @ApiResponse({ status: 409, description: 'Usuário já possui este tipo de exercício' })
   async assignExercise(
     @Req() request: any,
     @Param('userId', ParseIntPipe) userId: number,
@@ -88,8 +88,8 @@ export class OrganizationExerciseAdminController {
   @ApiParam({ name: 'userId', description: 'User ID', type: Number })
   @ApiParam({ name: 'exerciseId', description: 'Exercise ID', type: Number })
   @ApiResponse({ status: 200, description: 'Exercise removed successfully' })
-  @ApiResponse({ status: 403, description: 'User not in organization' })
-  @ApiResponse({ status: 404, description: 'Exercise not found' })
+  @ApiResponse({ status: 403, description: 'Usuário não pertence à organização' })
+  @ApiResponse({ status: 404, description: 'Exercício não encontrado' })
   async removeExerciseFromUser(
     @Req() request: any,
     @Param('userId', ParseIntPipe) userId: number,

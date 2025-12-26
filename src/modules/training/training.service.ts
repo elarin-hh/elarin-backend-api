@@ -18,7 +18,7 @@ export class TrainingService {
       .single();
 
     if (error || !data) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Usuário não encontrado');
     }
 
     return data.id;
@@ -50,7 +50,7 @@ export class TrainingService {
       .single();
 
     if (exerciseError || !exercise) {
-      throw new NotFoundException('Exercise not found');
+      throw new NotFoundException('Exercício não encontrado');
     }
 
     const hasPlanContext =
@@ -64,7 +64,7 @@ export class TrainingService {
         !saveTrainingDto.plan_item_id ||
         typeof saveTrainingDto.sequence_index !== 'number'
       ) {
-        throw new BadRequestException('Incomplete training plan context');
+        throw new BadRequestException('Contexto do plano de treino incompleto');
       }
 
       await this.validatePlanContext(
@@ -99,8 +99,8 @@ export class TrainingService {
       .single();
 
     if (metricsError) {
-      this.logger.error('Failed to save training metrics:', metricsError);
-      throw new InternalServerErrorException('Failed to save training');
+      this.logger.error('Falha ao salvar métricas de treino:', metricsError);
+      throw new InternalServerErrorException('Falha ao salvar treino');
     }
 
     return metric;
@@ -117,8 +117,8 @@ export class TrainingService {
       .range(offset, offset + limit - 1);
 
     if (error) {
-      this.logger.error('Failed to fetch history:', error);
-      throw new InternalServerErrorException('Failed to fetch history');
+      this.logger.error('Falha ao buscar histórico:', error);
+      throw new InternalServerErrorException('Falha ao buscar histórico');
     }
 
     return data;
@@ -134,7 +134,7 @@ export class TrainingService {
       .single();
 
     if (error || !data) {
-      throw new NotFoundException('Training not found');
+      throw new NotFoundException('Treino não encontrado');
     }
 
     return data;
@@ -155,11 +155,11 @@ export class TrainingService {
         .maybeSingle();
 
     if (sessionError || !planSession) {
-      throw new BadRequestException('Invalid plan session');
+      throw new BadRequestException('Sessão de plano inválida');
     }
 
     if (planSession.status !== 'in_progress') {
-      throw new BadRequestException('Plan session is not active');
+      throw new BadRequestException('Sessão de plano não está ativa');
     }
 
     const { data: planItem, error: itemError } =
@@ -178,7 +178,7 @@ export class TrainingService {
         .maybeSingle();
 
     if (itemError || !planItem) {
-      throw new BadRequestException('Invalid plan item');
+      throw new BadRequestException('Item de plano inválido');
     }
 
     let expectedType = planItem.exercise_type || null;
@@ -192,14 +192,14 @@ export class TrainingService {
           .maybeSingle();
 
       if (templateError || !template) {
-        throw new BadRequestException('Invalid plan item template');
+        throw new BadRequestException('Template de item de plano inválido');
       }
 
       expectedType = template.type || null;
     }
 
     if (expectedType && expectedType !== exerciseType) {
-      throw new BadRequestException('Exercise does not match plan item');
+      throw new BadRequestException('Exercício não corresponde ao item do plano');
     }
   }
 }

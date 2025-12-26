@@ -22,7 +22,7 @@ export class OrganizationService {
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new NotFoundException('Failed to fetch users');
+      throw new NotFoundException('Falha ao buscar usuários');
     }
 
     return data || [];
@@ -46,7 +46,7 @@ export class OrganizationService {
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new NotFoundException('Failed to fetch pending users');
+      throw new NotFoundException('Falha ao buscar usuários pendentes');
     }
 
     return data || [];
@@ -61,7 +61,7 @@ export class OrganizationService {
       .single();
 
     if (!membership) {
-      throw new NotFoundException('Membership not found');
+      throw new NotFoundException('Vínculo não encontrado');
     }
 
     const { error } = await this.supabaseService.client
@@ -74,7 +74,7 @@ export class OrganizationService {
       .eq('user_id', userId);
 
     if (error) {
-      throw new NotFoundException('Failed to approve user');
+      throw new NotFoundException('Falha ao aprovar usuário');
     }
 
     const { data: updatedMembership } = await this.supabaseService.client
@@ -99,7 +99,7 @@ export class OrganizationService {
       .single();
 
     if (!membership) {
-      throw new NotFoundException('Membership not found');
+      throw new NotFoundException('Vínculo não encontrado');
     }
 
     const { error } = await this.supabaseService.client
@@ -112,10 +112,10 @@ export class OrganizationService {
       .eq('user_id', userId);
 
     if (error) {
-      throw new NotFoundException('Failed to reject user');
+      throw new NotFoundException('Falha ao rejeitar usuário');
     }
 
-    return { message: 'User rejected successfully' };
+    return { message: 'Usuário rejeitado com sucesso' };
   }
 
   async toggleUserStatus(orgId: number, userId: number) {
@@ -127,7 +127,7 @@ export class OrganizationService {
       .single();
 
     if (!membership) {
-      throw new NotFoundException('Membership not found');
+      throw new NotFoundException('Vínculo não encontrado');
     }
 
     const newIsActive = !membership.is_active;
@@ -145,7 +145,7 @@ export class OrganizationService {
       .single();
 
     if (error) {
-      throw new NotFoundException('Failed to update user status');
+      throw new NotFoundException('Falha ao atualizar status do usuário');
     }
 
     const { data: user } = await this.supabaseService.client
@@ -169,10 +169,10 @@ export class OrganizationService {
       .eq('user_id', userId);
 
     if (error) {
-      throw new NotFoundException('Failed to remove user');
+      throw new NotFoundException('Falha ao remover usuário');
     }
 
-    return { message: 'User removed successfully' };
+    return { message: 'Usuário removido com sucesso' };
   }
 
   async getStats(orgId: number) {
@@ -208,7 +208,7 @@ export class OrganizationService {
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new NotFoundException('Failed to fetch active organizations');
+      throw new NotFoundException('Falha ao buscar organizações ativas');
     }
 
     return (data || []).map(org => {
@@ -227,7 +227,7 @@ export class OrganizationService {
 
     if (existingMembership) {
       return {
-        message: 'User already linked to this organization',
+        message: 'Usuário já vinculado a esta organização',
         membership: existingMembership,
       };
     }
@@ -245,11 +245,11 @@ export class OrganizationService {
       .single();
 
     if (error) {
-      throw new NotFoundException(`Failed to link user to organization: ${error.message}`);
+      throw new NotFoundException('Falha ao vincular usuário à organização');
     }
 
     return {
-      message: 'User linked to organization successfully',
+      message: 'Usuário vinculado à organização com sucesso',
       membership: data,
     };
   }
@@ -275,7 +275,7 @@ export class OrganizationService {
       .single();
 
     if (error || !data) {
-      throw new NotFoundException('Member not found');
+      throw new NotFoundException('Membro não encontrado');
     }
 
     return data;

@@ -43,7 +43,7 @@ export class ExercisesService {
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new InternalServerErrorException('Failed to fetch exercises');
+      throw new InternalServerErrorException('Falha ao buscar exercícios');
     }
 
     return (data || []).map((exercise: any) => ({
@@ -76,12 +76,12 @@ export class ExercisesService {
         .single();
 
     if (fetchError || !currentExercise) {
-      throw new NotFoundException('Exercise not found');
+      throw new NotFoundException('Exercício não encontrado');
     }
 
     if (!validateOverride(newConfig)) {
       throw new InternalServerErrorException(
-        'Invalid config: only variable fields (heuristicConfig, metrics) can be updated'
+        'Configuração inválida: apenas campos variáveis (heuristicConfig, metrics) podem ser atualizados'
       );
     }
 
@@ -99,7 +99,7 @@ export class ExercisesService {
       .single();
 
     if (error) {
-      throw new InternalServerErrorException('Failed to update exercise config');
+      throw new InternalServerErrorException('Falha ao atualizar configuração do exercício');
     }
 
     return data;
@@ -126,14 +126,14 @@ export class ExercisesService {
       .single();
 
     if (error || !exercise) {
-      throw new NotFoundException(`Exercise not found`);
+      throw new NotFoundException('Exercício não encontrado');
     }
 
     const template = (exercise as any).app_exercise_templates;
 
     if (!template.config) {
       throw new NotFoundException(
-        `No configuration found for exercise type: ${template.type}. Please populate database with exercise templates.`
+        `Nenhuma configuração encontrada para o tipo de exercício: ${template.type}.`
       );
     }
 
@@ -181,12 +181,12 @@ export class ExercisesService {
         .single();
 
       if (templateError || !template) {
-        throw new NotFoundException(`Exercise template not found: ${exerciseType}`);
+        throw new NotFoundException(`Template de exercício não encontrado: ${exerciseType}`);
       }
 
       if (!template.config) {
         throw new NotFoundException(
-          `No configuration found for exercise type: ${exerciseType}. Please populate database.`
+          `Nenhuma configuração encontrada para o tipo de exercício: ${exerciseType}.`
         );
       }
 
@@ -200,7 +200,7 @@ export class ExercisesService {
 
     if (!template.config) {
       throw new NotFoundException(
-        `No configuration found for exercise type: ${exerciseType}.`
+        `Nenhuma configuração encontrada para o tipo de exercício: ${exerciseType}.`
       );
     }
 
@@ -337,7 +337,7 @@ export class ExercisesService {
       .single();
 
     if (error || !data) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Usuário não encontrado');
     }
 
     return data.id;

@@ -8,12 +8,12 @@ export class RegisterWithOrganizationDto {
 
   @ApiProperty({ example: 'password123', minLength: 6, description: 'User password' })
   @IsString()
-  @MinLength(6, { message: 'Password must be at least 6 characters long' })
+  @MinLength(6, { message: 'A senha deve ter pelo menos 6 caracteres' })
   password: string;
 
   @ApiProperty({ example: 'John Doe', minLength: 2, description: 'User full name' })
   @IsString()
-  @MinLength(2, { message: 'Full name must be at least 2 characters long' })
+  @MinLength(2, { message: 'O nome completo deve ter pelo menos 2 caracteres' })
   full_name: string;
 
   @ApiProperty({

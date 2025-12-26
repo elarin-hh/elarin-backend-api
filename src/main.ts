@@ -1,11 +1,33 @@
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, BadRequestException } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import helmet from '@fastify/helmet';
 import fastifyCookie, { FastifyCookieOptions } from '@fastify/cookie';
+import { ValidationError } from 'class-validator';
 import { AppModule } from './app.module';
+
+const collectInvalidFields = (
+  errors: ValidationError[],
+  parentPath = '',
+): string[] => {
+  const fields: string[] = [];
+
+  for (const error of errors) {
+    const currentPath = parentPath ? `${parentPath}.${error.property}` : error.property;
+
+    if (error.constraints && Object.keys(error.constraints).length > 0) {
+      fields.push(currentPath);
+    }
+
+    if (error.children && error.children.length > 0) {
+      fields.push(...collectInvalidFields(error.children, currentPath));
+    }
+  }
+
+  return fields;
+};
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -52,7 +74,7 @@ async function bootstrap() {
       if (isLocal || isAllowedOrigin) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(new Error('Origem não permitida pelo CORS'));
       }
     },
     credentials: true,
@@ -71,6 +93,15 @@ async function bootstrap() {
       },
       skipMissingProperties: false,
       validateCustomDecorators: true,
+      exceptionFactory: (errors) => {
+        const fields = collectInvalidFields(errors);
+        const uniqueFields = Array.from(new Set(fields));
+        const message =
+          uniqueFields.length > 0
+            ? `Dados inválidos: ${uniqueFields.join(', ')}.`
+            : 'Dados inválidos.';
+        return new BadRequestException(message);
+      },
     }),
   );
 

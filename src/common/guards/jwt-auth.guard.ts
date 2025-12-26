@@ -34,7 +34,7 @@ export class JwtAuthGuard implements CanActivate {
     const token = this.extractToken(request);
 
     if (!token) {
-      throw new UnauthorizedException('Token not provided');
+      throw new UnauthorizedException('Token não informado');
     }
 
     try {
@@ -42,7 +42,7 @@ export class JwtAuthGuard implements CanActivate {
       request.user = user;
       return true;
     } catch (error) {
-      throw new UnauthorizedException('Invalid token');
+      throw new UnauthorizedException('Token inválido');
     }
   }
 

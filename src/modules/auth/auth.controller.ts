@@ -21,7 +21,7 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register new user' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 400, description: 'Dados de entrada inválidos' })
   async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) reply: FastifyReply) {
     const result = await this.authService.register(registerDto);
     this.setAuthCookies(reply, result.session);
@@ -33,7 +33,7 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register new user with organization' })
   @ApiResponse({ status: 201, description: 'User registered and linked to organization successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 400, description: 'Dados de entrada inválidos' })
   async registerWithOrganization(@Body() registerDto: RegisterWithOrganizationDto, @Res({ passthrough: true }) reply: FastifyReply) {
     const result = await this.authService.registerWithOrganization(registerDto);
     this.setAuthCookies(reply, result.session);
@@ -45,7 +45,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login' })
   @ApiResponse({ status: 200, description: 'Login successful' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({ status: 401, description: 'Credenciais inválidas' })
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) reply: FastifyReply) {
     const result = await this.authService.login(loginDto);
     this.setAuthCookies(reply, result.session);
@@ -56,9 +56,13 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Clear auth cookies' })
-  async logout(@Res({ passthrough: true }) reply: FastifyReply) {
-    this.clearAuthCookies(reply);
-    return { success: true };
+  async logout(@Res() reply: FastifyReply) {
+    try {
+      this.clearAuthCookies(reply);
+    } catch (error) {
+      console.error('Falha ao limpar cookies de autenticação', error);
+    }
+    return reply.status(HttpStatus.OK).send({ success: true });
   }
 
   @UseGuards(JwtAuthGuard)
@@ -67,7 +71,7 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current authenticated user (cookie-based auth)' })
   @ApiResponse({ status: 200, description: 'Authenticated user returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 401, description: 'Não autorizado' })
   async me(@Req() request: any) {
     return { user: request.user };
   }
@@ -78,7 +82,7 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete user account permanently' })
   @ApiResponse({ status: 200, description: 'Account deleted successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 401, description: 'Não autorizado' })
   async deleteAccount(@Req() request: any) {
     const user = request.user;
     return this.authService.deleteAccount(user.id);
@@ -92,8 +96,8 @@ export class AuthController {
     summary: 'Update user consent (LGPD Art. 8º)',
   })
   @ApiResponse({ status: 200, description: 'Consent updated successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 400, description: 'Invalid consent type' })
+  @ApiResponse({ status: 401, description: 'Não autorizado' })
+  @ApiResponse({ status: 400, description: 'Tipo de consentimento inválido' })
   async updateConsent(@Req() request: any, @Body() updateConsentDto: UpdateConsentDto) {
     const user = request.user;
     return this.userProfileService.updateConsent(user.id, updateConsentDto);
@@ -107,7 +111,7 @@ export class AuthController {
     summary: 'Export user data (LGPD Art. 18, V - Portabilidade)',
   })
   @ApiResponse({ status: 200, description: 'User data exported successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 401, description: 'Não autorizado' })
   async exportUserData(@Req() request: any) {
     const user = request.user;
     return this.userProfileService.exportUserData(user.id);
@@ -138,8 +142,22 @@ export class AuthController {
   }
 
   private clearAuthCookies(reply: FastifyReply) {
+    const isProd = process.env.NODE_ENV === 'production';
+    const options = {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax' as const,
+      secure: isProd,
+    };
+
+    if (typeof (reply as any).clearCookie === 'function') {
+      (reply as any).clearCookie('access_token', options);
+      (reply as any).clearCookie('refresh_token', options);
+      return;
+    }
+
     const base = 'Path=/; HttpOnly; SameSite=Lax; Max-Age=0';
-    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    const secure = isProd ? '; Secure' : '';
     reply.header('Set-Cookie', [
       `access_token=; ${base}${secure}`,
       `refresh_token=; ${base}${secure}`,

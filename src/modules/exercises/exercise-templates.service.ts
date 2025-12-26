@@ -14,7 +14,7 @@ export class ExerciseTemplatesService {
       .order('name', { ascending: true });
 
     if (error) {
-      throw new InternalServerErrorException('Failed to fetch exercise templates');
+      throw new InternalServerErrorException('Falha ao buscar templates de exercício');
     }
 
     return data || [];
@@ -27,7 +27,7 @@ export class ExerciseTemplatesService {
       .order('name', { ascending: true });
 
     if (error) {
-      throw new InternalServerErrorException('Failed to fetch exercise templates');
+      throw new InternalServerErrorException('Falha ao buscar templates de exercício');
     }
 
     return data || [];

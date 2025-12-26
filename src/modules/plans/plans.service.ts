@@ -13,7 +13,7 @@ export class PlansService {
       .order('price_cents', { ascending: true });
 
     if (error) {
-      throw new NotFoundException('Failed to fetch plans');
+      throw new NotFoundException('Falha ao buscar planos');
     }
 
     return data || [];

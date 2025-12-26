@@ -39,11 +39,11 @@ export class StaticConfigService {
 
         } catch (error) {
             this.logger.error(
-                `Failed to load static config for ${exerciseType}:`,
+                `Falha ao carregar configuração estática para ${exerciseType}:`,
                 error.stack
             );
             throw new NotFoundException(
-                `Static configuration not found for exercise type: ${exerciseType}`
+                `Configuração estática não encontrada para o tipo de exercício: ${exerciseType}`
             );
         }
     }
@@ -51,13 +51,13 @@ export class StaticConfigService {
     private validateConfig(config: any, exerciseType: string): void {
         if (!config._fixed) {
             throw new Error(
-                `Invalid config for ${exerciseType}: missing _fixed section`
+                `Configuração inválida para ${exerciseType}: seção _fixed ausente`
             );
         }
 
         if (!config._defaults) {
             throw new Error(
-                `Invalid config for ${exerciseType}: missing _defaults section`
+                `Configuração inválida para ${exerciseType}: seção _defaults ausente`
             );
         }
 
@@ -72,14 +72,14 @@ export class StaticConfigService {
         for (const field of requiredFixedFields) {
             if (!(field in config._fixed)) {
                 throw new Error(
-                    `Invalid config for ${exerciseType}: _fixed.${field} is required`
+                    `Configuração inválida para ${exerciseType}: _fixed.${field} obrigatório`
                 );
             }
         }
 
         if (!config._defaults.heuristicConfig) {
             throw new Error(
-                `Invalid config for ${exerciseType}: _defaults.heuristicConfig is required`
+                `Configuração inválida para ${exerciseType}: _defaults.heuristicConfig obrigatório`
             );
         }
     }

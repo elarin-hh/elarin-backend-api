@@ -24,11 +24,11 @@ export class AuthService {
     });
 
     if (error) {
-      throw new BadRequestException(error.message);
+      throw new BadRequestException('Falha ao criar usuário. Verifique os dados');
     }
 
     if (!authData.user) {
-      throw new BadRequestException('Auth user not created');
+      throw new BadRequestException('Usuário de autenticação não criado');
     }
 
 
@@ -51,7 +51,7 @@ export class AuthService {
     if (userError) {
 
       await this.supabaseService.client.auth.admin.deleteUser(authData.user.id);
-      throw new BadRequestException(userError.message);
+      throw new BadRequestException('Falha ao criar perfil do usuário');
     }
 
 
@@ -84,11 +84,11 @@ export class AuthService {
         .single();
 
       if (orgError || !org) {
-        throw new BadRequestException('Organization not found');
+        throw new BadRequestException('Organização não encontrada');
       }
 
       if (!org.is_active) {
-        throw new BadRequestException('Organization is not active');
+        throw new BadRequestException('Organização não está ativa');
       }
 
 
@@ -101,11 +101,11 @@ export class AuthService {
       });
 
       if (error) {
-        throw new BadRequestException(error.message);
+        throw new BadRequestException('Falha ao criar usuário. Verifique os dados');
       }
 
       if (!authData.user) {
-        throw new BadRequestException('Auth user not created');
+        throw new BadRequestException('Usuário de autenticação não criado');
       }
 
       authUserId = authData.user.id;
@@ -128,11 +128,11 @@ export class AuthService {
         .single();
 
       if (userError) {
-        throw new BadRequestException(userError.message);
+        throw new BadRequestException('Falha ao criar perfil do usuário');
       }
 
       if (!userProfile) {
-        throw new BadRequestException('Failed to create user profile');
+        throw new BadRequestException('Falha ao criar perfil do usuário');
       }
 
       userProfileId = userProfile.id;
@@ -151,14 +151,14 @@ export class AuthService {
         .single();
 
       if (membershipError) {
-        throw new Error(`Failed to link user to organization: ${membershipError.message || 'Unknown error'}`);
+        throw new BadRequestException('Falha ao vincular usuário à organização');
       }
 
 
 
 
       if (!userProfileId) {
-        throw new BadRequestException('User profile ID is missing');
+        throw new BadRequestException('ID do perfil do usuário ausente');
       }
 
       return {
@@ -192,7 +192,10 @@ export class AuthService {
         }
       }
 
-      throw new BadRequestException(error.message || 'Registration failed');
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Falha ao cadastrar usuário');
     }
   }
 
@@ -205,10 +208,10 @@ export class AuthService {
     });
 
     if (error || !authData.user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    await this.ensureNotOrganizationAccount(authData.user, 'Invalid credentials');
+    await this.ensureNotOrganizationAccount(authData.user, 'Credenciais inválidas');
 
     const userProfile = await this.userProfileService.getOrCreateUserProfile(
       authData.user.id,
@@ -231,10 +234,10 @@ export class AuthService {
     const { data: { user }, error } = await this.supabaseService.client.auth.getUser(token);
 
     if (error || !user) {
-      throw new UnauthorizedException('Invalid token');
+      throw new UnauthorizedException('Token inválido');
     }
 
-    await this.ensureNotOrganizationAccount(user, 'Invalid token');
+    await this.ensureNotOrganizationAccount(user, 'Token inválido');
 
     const userProfile = await this.userProfileService.getOrCreateUserProfile(
       user.id,
@@ -278,7 +281,7 @@ export class AuthService {
       const userProfile = await this.userProfileService.getUserProfile(authUserId);
 
       if (!userProfile) {
-        throw new BadRequestException('User profile not found');
+        throw new BadRequestException('Perfil do usuário não encontrado');
       }
 
       const userProfileId = userProfile.id;
@@ -323,12 +326,15 @@ export class AuthService {
       const { error: authDeleteError } = await this.supabaseService.client.auth.admin.deleteUser(authUserId);
 
       if (authDeleteError) {
-        throw new BadRequestException(`Failed to delete auth user: ${authDeleteError.message}`);
+        throw new BadRequestException('Falha ao excluir usuário de autenticação');
       }
 
-      return { message: 'Account deleted successfully' };
+      return { message: 'Conta excluída com sucesso' };
     } catch (error) {
-      throw new BadRequestException(error.message || 'Failed to delete account');
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Falha ao excluir conta');
     }
   }
 }

@@ -25,7 +25,7 @@ export class OrganizationExerciseAdminService {
 
     const template = await this.exerciseTemplatesService.getTemplateById(templateId);
     if (!template || !template.is_active) {
-      throw new BadRequestException('Invalid or inactive exercise template');
+      throw new BadRequestException('Template de exercício inválido ou inativo');
     }
 
     const { data: userExercises } = await this.supabaseService.client
@@ -44,7 +44,7 @@ export class OrganizationExerciseAdminService {
 
         const hasType = userTemplates?.some((t: any) => t.type === template.type);
         if (hasType) {
-          throw new ConflictException('User already has this exercise type');
+          throw new ConflictException('Usuário já possui este tipo de exercício');
         }
       }
     }
@@ -61,8 +61,8 @@ export class OrganizationExerciseAdminService {
       .single();
 
     if (error) {
-      console.error('Assign Exercise Error:', error);
-      throw new InternalServerErrorException('Failed to assign exercise: ' + error.message);
+      console.error('Erro ao atribuir exercício:', error);
+      throw new InternalServerErrorException('Falha ao atribuir exercício');
     }
 
     return {
@@ -87,7 +87,7 @@ export class OrganizationExerciseAdminService {
       .maybeSingle();
 
     if (!exercise) {
-      throw new NotFoundException('Exercise not found or does not belong to user');
+      throw new NotFoundException('Exercício não encontrado ou não pertence ao usuário');
     }
 
     const { error } = await this.supabaseService.client
@@ -96,8 +96,8 @@ export class OrganizationExerciseAdminService {
       .eq('id', exerciseId);
 
     if (error) {
-      console.error('Remove Exercise Error:', error);
-      throw new InternalServerErrorException('Failed to remove exercise: ' + error.message);
+      console.error('Erro ao remover exercício:', error);
+      throw new InternalServerErrorException('Falha ao remover exercício');
     }
   }
 
@@ -114,8 +114,8 @@ export class OrganizationExerciseAdminService {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Get Exercises Error:', error);
-      throw new InternalServerErrorException('Failed to fetch exercises: ' + error.message);
+      console.error('Erro ao buscar exercícios:', error);
+      throw new InternalServerErrorException('Falha ao buscar exercícios');
     }
 
     if (!exercises || exercises.length === 0) {
@@ -150,7 +150,7 @@ export class OrganizationExerciseAdminService {
         created_at: ex.created_at,
         config: ex.config,
         type: template?.type || 'unknown',
-        name: template?.name || 'Unknown Exercise'
+        name: template?.name || 'Exercício desconhecido'
       };
     });
   }
@@ -179,7 +179,7 @@ export class OrganizationExerciseAdminService {
       .single();
 
     if (error || !exercise) {
-      throw new NotFoundException('Exercise not found');
+      throw new NotFoundException('Exercício não encontrado');
     }
 
     return {
@@ -213,7 +213,7 @@ export class OrganizationExerciseAdminService {
       .single();
 
     if (!exercise) {
-      throw new NotFoundException('Exercise not found');
+      throw new NotFoundException('Exercício não encontrado');
     }
 
     const { data, error } = await this.supabaseService.client
@@ -224,7 +224,7 @@ export class OrganizationExerciseAdminService {
       .single();
 
     if (error) {
-      throw new InternalServerErrorException('Failed to update config');
+      throw new InternalServerErrorException('Falha ao atualizar configuração');
     }
 
     return data;
@@ -236,7 +236,7 @@ export class OrganizationExerciseAdminService {
   ) {
     const template = await this.exerciseTemplatesService.getTemplateById(templateId);
     if (!template) {
-      throw new NotFoundException('Exercise template not found');
+      throw new NotFoundException('Template de exercício não encontrado');
     }
 
     const { data, error } = await this.supabaseService.client
@@ -250,8 +250,8 @@ export class OrganizationExerciseAdminService {
       .single();
 
     if (error) {
-      console.error('Update Template Config Error:', error);
-      throw new InternalServerErrorException('Failed to update template config: ' + error.message);
+      console.error('Erro ao atualizar configuração do template:', error);
+      throw new InternalServerErrorException('Falha ao atualizar configuração do template');
     }
 
     return data;
@@ -270,7 +270,7 @@ export class OrganizationExerciseAdminService {
       .maybeSingle();
 
     if (error || !membership) {
-      throw new ForbiddenException('User does not belong to your organization');
+      throw new ForbiddenException('Usuário não pertence à sua organização');
     }
   }
 }

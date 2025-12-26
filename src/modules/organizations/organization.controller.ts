@@ -45,7 +45,7 @@ export class OrganizationController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Link a user to an organization' })
   @ApiResponse({ status: 201, description: 'User linked to organization successfully' })
-  @ApiResponse({ status: 404, description: 'User or organization not found' })
+  @ApiResponse({ status: 404, description: 'Usuário ou organização não encontrados' })
   async linkUserToOrganization(@Body() linkUserDto: LinkUserDto) {
     return this.organizationService.linkUserToOrganization(linkUserDto.user_id, linkUserDto.organization_id);
   }
@@ -53,7 +53,7 @@ export class OrganizationController {
   @Get('profile')
   @ApiOperation({ summary: 'Get organization profile' })
   @ApiResponse({ status: 200, description: 'Organization profile returned successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 401, description: 'Não autorizado' })
   async getProfile(@Req() request: any) {
     return { organization: request.organization };
   }
@@ -75,7 +75,7 @@ export class OrganizationController {
   @Get('users/:userId')
   @ApiOperation({ summary: 'Get a single user from organization' })
   @ApiResponse({ status: 200, description: 'User details' })
-  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
   async getMember(
     @Req() request: any,
     @Param('userId', ParseIntPipe) userId: number,
@@ -88,7 +88,7 @@ export class OrganizationController {
   @ApiOperation({ summary: 'Approve pending user' })
   @ApiParam({ name: 'userId', description: 'User ID', type: Number })
   @ApiResponse({ status: 200, description: 'User approved successfully' })
-  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
   async approveUser(
     @Req() request: any,
     @Param('userId') userId: number,
@@ -101,7 +101,7 @@ export class OrganizationController {
   @ApiOperation({ summary: 'Reject pending user' })
   @ApiParam({ name: 'userId', description: 'User ID', type: Number })
   @ApiResponse({ status: 200, description: 'User rejected successfully' })
-  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
   async rejectUser(
     @Req() request: any,
     @Param('userId') userId: number,
@@ -114,7 +114,7 @@ export class OrganizationController {
   @ApiOperation({ summary: 'Toggle user status (active/inactive)' })
   @ApiParam({ name: 'userId', description: 'User ID', type: Number })
   @ApiResponse({ status: 200, description: 'User status updated' })
-  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
   async toggleUserStatus(
     @Req() request: any,
     @Param('userId') userId: number,
@@ -127,7 +127,7 @@ export class OrganizationController {
   @ApiOperation({ summary: 'Remove user from organization' })
   @ApiParam({ name: 'userId', description: 'User ID', type: Number })
   @ApiResponse({ status: 200, description: 'User removed successfully' })
-  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
   async removeUser(
     @Req() request: any,
     @Param('userId') userId: number,

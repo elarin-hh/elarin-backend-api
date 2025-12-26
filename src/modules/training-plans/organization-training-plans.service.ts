@@ -50,7 +50,7 @@ export class OrganizationTrainingPlansService {
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new InternalServerErrorException('Failed to fetch training plans');
+      throw new InternalServerErrorException('Falha ao buscar planos de treino');
     }
 
     if (!plans || plans.length === 0) {
@@ -103,7 +103,7 @@ export class OrganizationTrainingPlansService {
       .single();
 
     if (error || !data) {
-      throw new InternalServerErrorException('Failed to create training plan');
+      throw new InternalServerErrorException('Falha ao criar plano de treino');
     }
 
     return data;
@@ -127,7 +127,7 @@ export class OrganizationTrainingPlansService {
       .single();
 
     if (error || !data) {
-      throw new NotFoundException('Training plan not found');
+      throw new NotFoundException('Plano de treino não encontrado');
     }
 
     const { data: items, error: itemsError } = await this.supabaseService.client
@@ -146,7 +146,7 @@ export class OrganizationTrainingPlansService {
       .order('position', { ascending: true });
 
     if (itemsError) {
-      throw new InternalServerErrorException('Failed to fetch plan items');
+      throw new InternalServerErrorException('Falha ao buscar itens do plano');
     }
 
     const hydratedItems = await this.attachTemplatesToItems(items || []);
@@ -183,7 +183,7 @@ export class OrganizationTrainingPlansService {
       .single();
 
     if (error || !data) {
-      throw new InternalServerErrorException('Failed to update training plan');
+      throw new InternalServerErrorException('Falha ao atualizar plano de treino');
     }
 
     return data;
@@ -199,7 +199,7 @@ export class OrganizationTrainingPlansService {
       .eq('organization_id', organizationId);
 
     if (error) {
-      throw new InternalServerErrorException('Failed to deactivate training plan');
+      throw new InternalServerErrorException('Falha ao desativar plano de treino');
     }
 
     return { message: 'Training plan deactivated' };
@@ -214,7 +214,7 @@ export class OrganizationTrainingPlansService {
       .eq('plan_id', planId);
 
     if (itemsError) {
-      throw new InternalServerErrorException('Failed to remove plan items');
+      throw new InternalServerErrorException('Falha ao remover itens do plano');
     }
 
     const { error } = await this.supabaseService.client
@@ -229,7 +229,7 @@ export class OrganizationTrainingPlansService {
           'Cannot remove plan because it is in use (assigned to users). Please deactivate it instead.',
         );
       }
-      throw new InternalServerErrorException('Failed to remove training plan');
+      throw new InternalServerErrorException('Falha ao remover plano de treino');
     }
 
     return { message: 'Training plan removed' };
@@ -283,7 +283,7 @@ export class OrganizationTrainingPlansService {
       .single();
 
     if (error || !item) {
-      throw new InternalServerErrorException('Failed to add plan item');
+      throw new InternalServerErrorException('Falha ao adicionar item ao plano');
     }
 
     return {
@@ -324,7 +324,7 @@ export class OrganizationTrainingPlansService {
         .eq('plan_id', planId)
         .maybeSingle();
       if (!existingItem) {
-        throw new NotFoundException('Plan item not found');
+        throw new NotFoundException('Item do plano não encontrado');
       }
 
       const template = existingItem.template_id
@@ -355,7 +355,7 @@ export class OrganizationTrainingPlansService {
       .single();
 
     if (error || !updatedItem) {
-      throw new InternalServerErrorException('Failed to update plan item');
+      throw new InternalServerErrorException('Falha ao atualizar item do plano');
     }
 
     const template = updatedItem.template_id
@@ -382,7 +382,7 @@ export class OrganizationTrainingPlansService {
         .eq('plan_id', planId);
 
     if (fetchError || !existingItems) {
-      throw new InternalServerErrorException('Failed to fetch plan items');
+      throw new InternalServerErrorException('Falha ao buscar itens do plano');
     }
 
     const existingIds = new Set(existingItems.map((i) => i.id));
@@ -390,7 +390,7 @@ export class OrganizationTrainingPlansService {
 
     if (!allValid || itemIds.length !== existingIds.size) {
       throw new BadRequestException(
-        'Invalid item IDs provided. Ensure all items belong to this plan and are included.',
+        'IDs de itens inválidos. Garanta que todos os itens pertencem a este plano e estão incluídos.',
       );
     }
 
@@ -418,7 +418,7 @@ export class OrganizationTrainingPlansService {
         .single();
 
     if (fetchError || !itemToRemove) {
-      throw new NotFoundException('Plan item not found');
+      throw new NotFoundException('Item do plano não encontrado');
     }
 
     const { error } = await this.supabaseService.client
@@ -428,7 +428,7 @@ export class OrganizationTrainingPlansService {
       .eq('plan_id', planId);
 
     if (error) {
-      throw new InternalServerErrorException('Failed to remove plan item');
+      throw new InternalServerErrorException('Falha ao remover item do plano');
     }
 
 
@@ -480,7 +480,7 @@ export class OrganizationTrainingPlansService {
       .maybeSingle();
 
     if (error) {
-      throw new InternalServerErrorException('Failed to fetch user assignment');
+      throw new InternalServerErrorException('Falha ao buscar atribuição do usuário');
     }
 
     const plan = data ? normalizeSingle(data.plan) : null;
@@ -543,7 +543,7 @@ export class OrganizationTrainingPlansService {
       .single();
 
     if (error || !assignment) {
-      throw new InternalServerErrorException('Failed to assign training plan');
+      throw new InternalServerErrorException('Falha ao atribuir plano de treino');
     }
 
     await this.ensureUserExercises(userId, dto.plan_id);
@@ -562,7 +562,7 @@ export class OrganizationTrainingPlansService {
       .eq('is_active', true);
 
     if (error) {
-      throw new InternalServerErrorException('Failed to remove assignment');
+      throw new InternalServerErrorException('Falha ao remover atribuição');
     }
 
     return { message: 'Training plan assignment removed' };
@@ -575,7 +575,7 @@ export class OrganizationTrainingPlansService {
       .eq('plan_id', planId);
 
     if (error) {
-      throw new InternalServerErrorException('Failed to fetch plan items');
+      throw new InternalServerErrorException('Falha ao buscar itens do plano');
     }
 
     const templateIds = Array.from(
@@ -593,7 +593,7 @@ export class OrganizationTrainingPlansService {
         .in('id', templateIds);
 
     if (templateError) {
-      throw new InternalServerErrorException('Failed to fetch templates');
+      throw new InternalServerErrorException('Falha ao buscar templates');
     }
 
     const inactive = (templates || []).find((t: any) => !t.is_active);
@@ -631,7 +631,7 @@ export class OrganizationTrainingPlansService {
       .insert(payload);
 
     if (insertError) {
-      throw new InternalServerErrorException('Failed to assign user exercises');
+      throw new InternalServerErrorException('Falha ao atribuir exercícios ao usuário');
     }
   }
 
@@ -647,7 +647,7 @@ export class OrganizationTrainingPlansService {
       .maybeSingle();
 
     if (error || !membership) {
-      throw new ForbiddenException('User does not belong to your organization');
+      throw new ForbiddenException('Usuário não pertence à sua organização');
     }
   }
 
@@ -660,7 +660,7 @@ export class OrganizationTrainingPlansService {
       .single();
 
     if (error || !data) {
-      throw new NotFoundException('Training plan not found');
+      throw new NotFoundException('Plano de treino não encontrado');
     }
 
     return data;
@@ -674,7 +674,7 @@ export class OrganizationTrainingPlansService {
       .single();
 
     if (error || !data) {
-      throw new BadRequestException('Invalid exercise template');
+      throw new BadRequestException('Template de exercício inválido');
     }
 
     return data as TemplateRecord;
@@ -714,7 +714,7 @@ export class OrganizationTrainingPlansService {
       .in('id', templateIds);
 
     if (error) {
-      throw new InternalServerErrorException('Failed to fetch exercise templates');
+      throw new InternalServerErrorException('Falha ao buscar templates de exercício');
     }
 
     const templateMap = new Map<number, TemplateSummary>();
@@ -755,7 +755,7 @@ export class OrganizationTrainingPlansService {
       .order('assigned_at', { ascending: false });
 
     if (error) {
-      throw new InternalServerErrorException('Failed to fetch user assignments');
+      throw new InternalServerErrorException('Falha ao buscar atribuições do usuário');
     }
 
     return (data || [])
@@ -785,7 +785,7 @@ export class OrganizationTrainingPlansService {
       .eq('is_active', true);
 
     if (error) {
-      throw new InternalServerErrorException('Failed to remove assignment');
+      throw new InternalServerErrorException('Falha ao remover atribuição');
     }
 
     return { message: 'Training plan assignment removed' };

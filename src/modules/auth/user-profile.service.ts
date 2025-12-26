@@ -34,7 +34,7 @@ export class UserProfileService {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          this.logger.warn(`User profile not found for user ${userId}`);
+          this.logger.warn(`Perfil do usuário não encontrado para o usuário ${userId}`);
           return null;
         }
         throw error;
@@ -42,7 +42,7 @@ export class UserProfileService {
 
       return data;
     } catch (error) {
-      this.logger.error(`Error fetching user profile for ${userId}:`, error);
+      this.logger.error(`Erro ao buscar perfil do usuário ${userId}:`, error);
       return null;
     }
   }
@@ -65,14 +65,14 @@ export class UserProfileService {
         .single();
 
       if (error) {
-        this.logger.error(`Error creating user profile for ${userId}:`, error);
+        this.logger.error(`Erro ao criar perfil do usuário ${userId}:`, error);
         return null;
       }
 
       this.logger.log(`User profile created successfully for ${userId}`);
       return data;
     } catch (error) {
-      this.logger.error(`Error creating user profile for ${userId}:`, error);
+      this.logger.error(`Erro ao criar perfil do usuário ${userId}:`, error);
       return null;
     }
   }
@@ -96,7 +96,7 @@ export class UserProfileService {
       const userProfile = await this.getUserProfile(authUserId);
 
       if (!userProfile) {
-        throw new BadRequestException('User profile not found');
+        throw new BadRequestException('Perfil do usuário não encontrado');
       }
 
       const timestamp = dto.consent_timestamp || new Date().toISOString();
@@ -122,13 +122,13 @@ export class UserProfileService {
         .single();
 
       if (error) {
-        throw new BadRequestException(error.message);
+        throw new BadRequestException('Falha ao atualizar consentimento');
       }
 
       this.logger.log(`Consent updated for user ${authUserId}: ${dto.consent_type} = ${dto.consent_given}`);
       return data;
     } catch (error) {
-      this.logger.error(`Error updating consent for user ${authUserId}:`, error);
+      this.logger.error(`Erro ao atualizar consentimento para o usuário ${authUserId}:`, error);
       throw error;
     }
   }
@@ -138,7 +138,7 @@ export class UserProfileService {
       const userProfile = await this.getUserProfile(authUserId);
 
       if (!userProfile) {
-        throw new BadRequestException('User profile not found');
+        throw new BadRequestException('Perfil do usuário não encontrado');
       }
 
       const userProfileId = userProfile.id;
@@ -201,7 +201,7 @@ export class UserProfileService {
       this.logger.log(`Data exported for user ${authUserId}`);
       return exportData;
     } catch (error) {
-      this.logger.error(`Error exporting data for user ${authUserId}:`, error);
+      this.logger.error(`Erro ao exportar dados do usuário ${authUserId}:`, error);
       throw error;
     }
   }

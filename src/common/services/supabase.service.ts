@@ -11,7 +11,7 @@ export class SupabaseService {
     const supabaseKey = this.configService.get<string>('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase credentials not found in environment variables');
+      throw new Error('Credenciais do Supabase não encontradas nas variáveis de ambiente');
     }
 
     this.supabase = createClient(supabaseUrl, supabaseKey, {
