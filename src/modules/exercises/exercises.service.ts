@@ -225,15 +225,75 @@ export class ExercisesService {
     templateConfig: Record<string, any>,
     userConfig: Record<string, any>
   ): Record<string, any> {
+    const mergeMetrics = this.mergeMetrics.bind(this);
+
+    const mergeArrayByKey = <T extends Record<string, any>>(
+      target: T[],
+      source: Partial<T>[],
+      key: keyof T
+    ): T[] => {
+      if (!Array.isArray(target)) return source as T[];
+      if (!Array.isArray(source)) return target;
+
+      const overridesByKey = new Map<string, Partial<T>>();
+      const extras: Partial<T>[] = [];
+
+      for (const item of source) {
+        const itemKey = item?.[key];
+        if (itemKey === undefined || itemKey === null || itemKey === '') {
+          extras.push(item);
+          continue;
+        }
+        overridesByKey.set(String(itemKey), item);
+      }
+
+      const merged = target.map((item) => {
+        const itemKey = item?.[key];
+        if (
+          itemKey !== undefined &&
+          itemKey !== null &&
+          overridesByKey.has(String(itemKey))
+        ) {
+          const override = overridesByKey.get(String(itemKey))!;
+          overridesByKey.delete(String(itemKey));
+          return deepMerge(item, override);
+        }
+        return item;
+      });
+
+      for (const override of overridesByKey.values()) {
+        merged.push(override as T);
+      }
+
+      for (const extra of extras) {
+        merged.push(extra as T);
+      }
+
+      return merged;
+    };
+
     const deepMerge = (target: any, source: any): any => {
       if (!source || typeof source !== 'object') return target;
 
       const result = { ...target };
       for (const key in source) {
-        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-          result[key] = deepMerge(result[key] || {}, source[key]);
-        } else if (source[key] !== undefined) {
-          result[key] = source[key];
+        const sourceValue = source[key];
+        const targetValue = result[key];
+
+        if (Array.isArray(sourceValue) && Array.isArray(targetValue)) {
+          if (key === 'metrics') {
+            result[key] = mergeMetrics(targetValue, sourceValue);
+          } else if (key === 'checks') {
+            result[key] = mergeArrayByKey(targetValue, sourceValue, 'id');
+          } else if (key === 'states') {
+            result[key] = mergeArrayByKey(targetValue, sourceValue, 'name');
+          } else {
+            result[key] = sourceValue;
+          }
+        } else if (sourceValue && typeof sourceValue === 'object' && !Array.isArray(sourceValue)) {
+          result[key] = deepMerge(targetValue || {}, sourceValue);
+        } else if (sourceValue !== undefined) {
+          result[key] = sourceValue;
         }
       }
       return result;
