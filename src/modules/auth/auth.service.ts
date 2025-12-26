@@ -208,6 +208,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    await this.ensureNotOrganizationAccount(authData.user, 'Invalid credentials');
+
     const userProfile = await this.userProfileService.getOrCreateUserProfile(
       authData.user.id,
       authData.user.email || '',
@@ -232,6 +234,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid token');
     }
 
+    await this.ensureNotOrganizationAccount(user, 'Invalid token');
+
     const userProfile = await this.userProfileService.getOrCreateUserProfile(
       user.id,
       user.email || '',
@@ -243,6 +247,29 @@ export class AuthService {
       full_name: userProfile?.full_name || user.user_metadata?.full_name,
       is_dev: userProfile?.is_dev || false,
     };
+  }
+
+  private async ensureNotOrganizationAccount(
+    user: { id: string; user_metadata?: { type?: string | null } },
+    errorMessage: string
+  ) {
+    if (user?.user_metadata?.type === 'organization') {
+      throw new UnauthorizedException(errorMessage);
+    }
+
+    const { data: organization, error } = await this.supabaseService.client
+      .from('app_organizations')
+      .select('id')
+      .eq('auth_uid', user.id)
+      .maybeSingle();
+
+    if (error) {
+      throw new UnauthorizedException(errorMessage);
+    }
+
+    if (organization) {
+      throw new UnauthorizedException(errorMessage);
+    }
   }
 
   async deleteAccount(authUserId: string) {

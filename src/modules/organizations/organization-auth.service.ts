@@ -105,7 +105,7 @@ export class OrganizationAuthService {
       .single();
 
     if (error || !organization) {
-      throw new UnauthorizedException('Organization not found or inactive');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     return {
@@ -133,7 +133,7 @@ export class OrganizationAuthService {
       .single();
 
     if (!organization) {
-      throw new UnauthorizedException('Organization not found');
+      throw new UnauthorizedException('Invalid token');
     }
 
     return this.sanitizeOrganization(organization);
@@ -147,7 +147,7 @@ export class OrganizationAuthService {
       .single();
 
     if (error || !organization) {
-      throw new UnauthorizedException('Organization not found');
+      throw new UnauthorizedException('Invalid token');
     }
 
     return this.sanitizeOrganization(organization);
