@@ -34,7 +34,8 @@ export class ExercisesService {
           type,
           name,
           description,
-          image_url
+          image_url,
+          video_url
         )
       `)
       .eq('user_id', userIdInt)
@@ -53,6 +54,7 @@ export class ExercisesService {
       name: exercise.app_exercise_templates.name,
       description: exercise.app_exercise_templates.description,
       image_url: exercise.app_exercise_templates.image_url,
+      video_url: exercise.app_exercise_templates.video_url,
       is_active: exercise.is_active,
       created_at: exercise.created_at,
       updated_at: exercise.updated_at,
@@ -118,7 +120,8 @@ export class ExercisesService {
           type,
           name,
           config,
-          editable_fields
+          editable_fields,
+          video_url
         )
       `)
       .eq('id', exerciseId)
@@ -146,6 +149,7 @@ export class ExercisesService {
 
     return {
       exercise_name: template.name,
+      referenceVideoUrl: template.video_url ?? null,
       config: mergedConfig,
       editable_fields: template.editable_fields || [],
       user_config: exercise.config || {}
@@ -165,7 +169,8 @@ export class ExercisesService {
           type,
           name,
           config,
-          editable_fields
+          editable_fields,
+          video_url
         )
       `)
       .eq('user_id', userIdInt)
@@ -176,7 +181,7 @@ export class ExercisesService {
       // No user_exercise record - return template config only
       const { data: template, error: templateError } = await this.supabaseService.client
         .from('app_exercise_templates')
-        .select('type, name, config, editable_fields')
+        .select('type, name, config, editable_fields, video_url')
         .eq('type', exerciseType)
         .single();
 
@@ -192,6 +197,7 @@ export class ExercisesService {
 
       return {
         exerciseName: template.name,
+        referenceVideoUrl: template.video_url ?? null,
         ...template.config
       };
     }
@@ -213,6 +219,7 @@ export class ExercisesService {
 
     return {
       exerciseName: template.name,
+      referenceVideoUrl: template.video_url ?? null,
       ...mergedConfig
     };
   }
