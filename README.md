@@ -13,7 +13,6 @@ Uma API REST robusta e performática para treinos personalizados com inteligênc
 - **[TypeScript](https://www.typescriptlang.org/)** - Superset tipado do JavaScript
 - **[Supabase](https://supabase.com/)** - Backend as a Service (Auth + Database)
 - **[class-validator](https://github.com/typestack/class-validator)** - Validação de DTOs com decorators
-- **[Swagger/OpenAPI](https://swagger.io/)** - Documentação automática da API
 
 ---
 
@@ -120,16 +119,6 @@ npm run typecheck
 
 ---
 
-## 📚 Documentação da API
-
-A documentação interativa da API está disponível via **Swagger UI**:
-
-```
-http://localhost:3001/docs
-```
-
----
-
 ## 🔐 Autenticação
 
 A API utiliza **JWT (JSON Web Tokens)** para autenticação.
@@ -162,21 +151,11 @@ A API utiliza **JWT (JSON Web Tokens)** para autenticação.
 
 ## 🧪 Testando a API
 
-### Opção 1: Swagger UI (Recomendado)
+### Opção 1: Postman ou Insomnia
 
-Acesse: `http://localhost:3001/docs`
+Configure sua coleção e use os endpoints listados abaixo.
 
-1. Execute o endpoint de **Login**
-2. Copie o `access_token` retornado
-3. Clique em **Authorize** no topo da página
-4. Cole o token e clique em **Authorize**
-5. Teste todos os endpoints protegidos!
-
-### Opção 2: Postman ou Insomnia
-
-Use o Swagger docs para testar ou configure sua própria coleção
-
-### Opção 3: cURL
+### Opção 2: cURL
 
 ```bash
 # Registrar usuário
@@ -226,12 +205,10 @@ Esta API combina o melhor dos dois mundos:
 ```typescript
 @Controller('exercises')
 @UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class ExercisesController {
   constructor(private readonly exercisesService: ExercisesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all exercises' })
   async getAll() {
     return this.exercisesService.getAll();
   }
@@ -252,7 +229,6 @@ export class ExercisesController {
 - Histórico de treinos
 - Validação automática de DTOs
 - Rate limiting (100 req/min)
-- Documentação Swagger automática
 - Exception handling global
 - Guards de autenticação
 - CORS configurável

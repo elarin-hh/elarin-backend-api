@@ -12,7 +12,6 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrganizationAuthGuard } from '../organizations/guards/organization-auth.guard';
 import { OrganizationRoute } from '../../common/decorators/organization-route.decorator';
 import {
@@ -25,10 +24,8 @@ import {
 } from './dto';
 import { OrganizationTrainingPlansService } from './organization-training-plans.service';
 
-@ApiTags('Organization Training Plans')
 @Controller('organizations')
 @UseGuards(OrganizationAuthGuard)
-@ApiBearerAuth()
 @OrganizationRoute()
 export class OrganizationTrainingPlansController {
   constructor(
@@ -36,15 +33,11 @@ export class OrganizationTrainingPlansController {
   ) { }
 
   @Get('training-plans')
-  @ApiOperation({ summary: 'List training plans for organization' })
-  @ApiResponse({ status: 200, description: 'Training plans retrieved' })
   async getPlans(@Req() request: any) {
     return this.trainingPlansService.getPlans(request.organization.id);
   }
 
   @Post('training-plans')
-  @ApiOperation({ summary: 'Create training plan' })
-  @ApiResponse({ status: 201, description: 'Training plan created' })
   async createPlan(
     @Req() request: any,
     @Body() dto: CreateTrainingPlanDto,
@@ -53,8 +46,6 @@ export class OrganizationTrainingPlansController {
   }
 
   @Get('training-plans/:planId')
-  @ApiOperation({ summary: 'Get training plan details' })
-  @ApiParam({ name: 'planId', type: Number })
   async getPlan(
     @Req() request: any,
     @Param('planId', ParseIntPipe) planId: number,
@@ -63,8 +54,6 @@ export class OrganizationTrainingPlansController {
   }
 
   @Patch('training-plans/:planId')
-  @ApiOperation({ summary: 'Update training plan' })
-  @ApiParam({ name: 'planId', type: Number })
   async updatePlan(
     @Req() request: any,
     @Param('planId', ParseIntPipe) planId: number,
@@ -75,8 +64,6 @@ export class OrganizationTrainingPlansController {
 
   @Patch('training-plans/:planId/deactivate')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Deactivate training plan' })
-  @ApiParam({ name: 'planId', type: Number })
   async deactivatePlan(
     @Req() request: any,
     @Param('planId', ParseIntPipe) planId: number,
@@ -86,8 +73,6 @@ export class OrganizationTrainingPlansController {
 
   @Delete('training-plans/:planId')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Remove training plan' })
-  @ApiParam({ name: 'planId', type: Number })
   async deletePlan(
     @Req() request: any,
     @Param('planId', ParseIntPipe) planId: number,
@@ -96,8 +81,6 @@ export class OrganizationTrainingPlansController {
   }
 
   @Post('training-plans/:planId/items')
-  @ApiOperation({ summary: 'Add training plan item' })
-  @ApiParam({ name: 'planId', type: Number })
   async addPlanItem(
     @Req() request: any,
     @Param('planId', ParseIntPipe) planId: number,
@@ -107,9 +90,6 @@ export class OrganizationTrainingPlansController {
   }
 
   @Patch('training-plans/:planId/items/reorder')
-  @ApiOperation({ summary: 'Reorder training plan items' })
-  @ApiParam({ name: 'planId', type: Number })
-  @ApiResponse({ status: 200, description: 'Items reordered successfully' })
   async reorderItems(
     @Req() request: any,
     @Param('planId', ParseIntPipe) planId: number,
@@ -123,9 +103,6 @@ export class OrganizationTrainingPlansController {
   }
 
   @Patch('training-plans/:planId/items/:itemId')
-  @ApiOperation({ summary: 'Update training plan item' })
-  @ApiParam({ name: 'planId', type: Number })
-  @ApiParam({ name: 'itemId', type: Number })
   async updatePlanItem(
     @Req() request: any,
     @Param('planId', ParseIntPipe) planId: number,
@@ -142,9 +119,6 @@ export class OrganizationTrainingPlansController {
 
   @Delete('training-plans/:planId/items/:itemId')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Remove training plan item' })
-  @ApiParam({ name: 'planId', type: Number })
-  @ApiParam({ name: 'itemId', type: Number })
   async removePlanItem(
     @Req() request: any,
     @Param('planId', ParseIntPipe) planId: number,
@@ -158,8 +132,6 @@ export class OrganizationTrainingPlansController {
   }
 
   @Get('users/:userId/training-plans')
-  @ApiOperation({ summary: 'Get active training plan assignments for user' })
-  @ApiParam({ name: 'userId', type: Number })
   async getUserAssignments(
     @Req() request: any,
     @Param('userId', ParseIntPipe) userId: number,
@@ -171,8 +143,6 @@ export class OrganizationTrainingPlansController {
   }
 
   @Post('users/:userId/training-plans')
-  @ApiOperation({ summary: 'Assign training plan to user' })
-  @ApiParam({ name: 'userId', type: Number })
   async assignPlan(
     @Req() request: any,
     @Param('userId', ParseIntPipe) userId: number,
@@ -187,9 +157,6 @@ export class OrganizationTrainingPlansController {
 
   @Delete('users/:userId/training-plans/:planId')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Remove training plan assignment from user' })
-  @ApiParam({ name: 'userId', type: Number })
-  @ApiParam({ name: 'planId', type: Number })
   async removeAssignment(
     @Req() request: any,
     @Param('userId', ParseIntPipe) userId: number,

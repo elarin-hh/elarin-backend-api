@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { ValidationPipe, Logger, BadRequestException } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import helmet from '@fastify/helmet';
 import fastifyCookie, { FastifyCookieOptions } from '@fastify/cookie';
@@ -105,24 +104,10 @@ async function bootstrap() {
     }),
   );
 
-  const config = new DocumentBuilder()
-    .setTitle('Elarin API')
-    .setDescription('AI-powered fitness trainer API built with NestJS + Fastify')
-    .setVersion('1.0.0')
-    .addBearerAuth()
-    .addTag('Authentication', 'User authentication endpoints')
-    .addTag('Exercises', 'Exercise management endpoints')
-    .addTag('Training', 'Training session endpoints')
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
-
   const port = configService.get('port') || 3000;
   await app.listen(port, '0.0.0.0');
 
   Logger.log(`Application is running on: http://localhost:${port}`, 'Bootstrap');
-  Logger.log(`API Documentation: http://localhost:${port}/docs`, 'Bootstrap');
 }
 
 bootstrap();
